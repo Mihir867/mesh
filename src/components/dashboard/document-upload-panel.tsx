@@ -59,8 +59,10 @@ export interface UploadedFile {
   createdAt?: string;
 }
 
-interface DocumentUploadPanelProps {
+export interface DocumentUploadPanelProps {
+  onUploadStart?: () => void;
   onUploadSuccess?: (file: UploadedFile) => void;
+  onClear?: () => void;
 }
 
 // Exactly the supported MIME types requested by the user
@@ -104,7 +106,9 @@ interface UnsupportedFileState {
 }
 
 export function DocumentUploadPanel({
+  onUploadStart,
   onUploadSuccess,
+  onClear,
 }: DocumentUploadPanelProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -295,6 +299,7 @@ export function DocumentUploadPanel({
       }
 
       setUnsupportedFile(null);
+      onUploadStart?.();
       setIsUploading(true);
 
       // Create object URL for client preview
@@ -453,6 +458,7 @@ export function DocumentUploadPanel({
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+    onClear?.();
   };
 
   const formatFileSize = (bytes?: number) => {

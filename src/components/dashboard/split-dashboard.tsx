@@ -1,103 +1,166 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import { DocumentUploadPanel, type UploadedFile } from "./document-upload-panel";
 import { JsonOutputPanel } from "./json-output-panel";
 
-const SAMPLE_JSON = {
-  document_type: "structured_data",
-  schema_version: "3.0.0",
-  confidence_score: 0.996,
-  extracted_at: "2026-09-07T11:32:45Z",
-  processing_time_ms: 847,
-  metadata: {
-    source_format: "PDF",
-    page_count: 3,
-    language: "en-US",
-    character_count: 4821,
-  },
-  entities: {
-    organizations: [
-      {
-        name: "Mesh Corporation",
-        type: "company",
-        confidence: 0.98,
-        mentions: 3,
-      },
-      {
-        name: "Global Tech Solutions",
-        type: "vendor",
-        confidence: 0.94,
-        mentions: 2,
-      },
-    ],
-    dates: [
-      { value: "2026-08-15", type: "transaction_date", confidence: 0.99 },
-      { value: "2026-09-15", type: "due_date", confidence: 0.97 },
-    ],
-    amounts: [
-      { value: 15750.0, currency: "USD", type: "total", confidence: 0.99 },
-      { value: 14500.0, currency: "USD", type: "subtotal", confidence: 0.98 },
-    ],
-  },
-  structured_fields: {
-    reference_number: "REF-2026-891047",
-    status: "verified",
-    priority: "high",
-    category: "financial",
-    tags: ["invoice", "payment", "recurring"],
-  },
-  line_items: [
-    {
-      id: "item_001",
-      description: "Cloud Infrastructure Services",
-      quantity: 1,
-      unit_price: 8500.0,
-      total: 8500.0,
-      metadata: {
-        service_period: "2026-08",
-        billing_cycle: "monthly",
-      },
-    },
-    {
-      id: "item_002",
-      description: "AI Processing Credits",
-      quantity: 500,
-      unit_price: 12.0,
-      total: 6000.0,
-      metadata: {
-        usage_type: "compute",
-        region: "us-east-1",
-      },
-    },
-  ],
-  computed_analytics: {
-    total_value: 15750.0,
-    payment_terms: "NET-30",
-    risk_score: 0.12,
-    processing_confidence: 0.996,
-  },
-};
-
 export function SplitDashboard() {
-  const [, setUploadedFile] = useState<UploadedFile | null>(null);
-  const [extractedData] = useState<object>(SAMPLE_JSON);
+  const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
+  const [extractedData, setExtractedData] = useState<object | null>(null);
+  const [category, setCategory] = useState<string | null>(null);
+  const [summary, setSummary] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [isStreaming, setIsStreaming] = useState<boolean>(false);
+  const [processingTimeMs, setProcessingTimeMs] = useState<number>(0);
+  const [confidenceScore, setConfidenceScore] = useState<number>(0.98);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleUploadSuccess = (file: UploadedFile) => {
-    setUploadedFile(file);
-    // Future integration: fetch extraction data for this file
-    console.log("File uploaded successfully:", file);
-  };
+  const processingTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Triggered the moment user drops or selects a file
+  const handleUploadStart = useCallback(() => {
+    if (processingTimerRef.current) {
+      clearTimeout(processingTimerRef.current);
+    }
+    setExtractedData(null);
+    setCategory(null);
+    setSummary(null);
+    setIsProcessing(false);
+    setIsStreaming(false);
+    setErrorMessage(null);
+  }, []);
+
+  // Core processing pipeline trigger
+  const runPipeline = useCallback(async (docId: string) => {
+    const startTime = Date.now();
+    try {
+      console.log(`[SplitDashboard] Triggering pipeline for document: ${docId}`);
+      const res = await fetch(`/api/documents/${docId}/process`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const result = await res.json();
+      const elapsed = Date.now() - startTime;
+      setProcessingTimeMs(elapsed);
+
+      if (!res.ok || !result.success) {
+        throw new Error(result.error || "Document processing failed.");
+      }
+
+      console.log(`[SplitDashboard] Pipeline complete in ${elapsed}ms:`, result);
+
+      // Construct a clean, structured JSON presentation payload
+      const payload = {
+        document_id: docId,
+        category: result.category || result.extraction?.category || "Unknown",
+        summary: result.summary || result.extraction?.summary || "",
+        data: result.data || result.extraction?.data || {},
+      };
+
+      // Calculate confidence if array of grounded fields
+      const fields = result.data || result.extraction?.data;
+      if (Array.isArray(fields) && fields.length > 0) {
+        const totalConf = fields.reduce(
+          (acc: number, f: any) => acc + (typeof f.confidence === "number" ? f.confidence : 0.95),
+          0
+        );
+        const avg = parseFloat((totalConf / fields.length).toFixed(3));
+        setConfidenceScore(avg);
+      } else {
+        setConfidenceScore(0.98);
+      }
+
+      setCategory(payload.category);
+      setSummary(payload.summary);
+      setExtractedData(payload);
+
+      // Stop skeleton loader and start line-by-line typewriter streaming
+      setIsProcessing(false);
+      setIsStreaming(true);
+    } catch (err: any) {
+      console.error("[SplitDashboard] Pipeline error:", err);
+      setIsProcessing(false);
+      setIsStreaming(false);
+      setErrorMessage(err.message || "Failed to process document with AI.");
+    }
+  }, []);
+
+  // Triggered when file upload to Supabase finishes
+  const handleUploadSuccess = useCallback(
+    (file: UploadedFile) => {
+      setUploadedFile(file);
+      setErrorMessage(null);
+
+      // UX Requirement: after 50ms, start the right panel skeleton loader
+      if (processingTimerRef.current) {
+        clearTimeout(processingTimerRef.current);
+      }
+
+      processingTimerRef.current = setTimeout(() => {
+        setIsProcessing(true);
+        setIsStreaming(false);
+        setExtractedData(null);
+
+        // Run the backend processing
+        if (file.id && !file.id.startsWith("local_")) {
+          runPipeline(file.id);
+        } else {
+          // If local offline fallback without DB document row
+          console.warn("[SplitDashboard] Local fallback without document ID");
+          setIsProcessing(false);
+        }
+      }, 50);
+    },
+    [runPipeline]
+  );
+
+  // Clear handler
+  const handleClear = useCallback(() => {
+    if (processingTimerRef.current) {
+      clearTimeout(processingTimerRef.current);
+    }
+    setUploadedFile(null);
+    setExtractedData(null);
+    setCategory(null);
+    setSummary(null);
+    setIsProcessing(false);
+    setIsStreaming(false);
+    setErrorMessage(null);
+    setProcessingTimeMs(0);
+  }, []);
+
+  // Retry handler
+  const handleRetry = useCallback(() => {
+    if (uploadedFile?.id) {
+      setErrorMessage(null);
+      setIsProcessing(true);
+      setIsStreaming(false);
+      runPipeline(uploadedFile.id);
+    }
+  }, [uploadedFile, runPipeline]);
 
   return (
     <div className="w-full max-w-[1560px] mx-auto">
       <div className="rounded-[16px] bg-white border border-zinc-200/90 shadow-[0_8px_30px_rgb(0,0,0,0.06)] overflow-hidden h-[740px] max-h-[calc(100vh-160px)] min-h-[620px] flex flex-col">
         <div className="grid grid-cols-1 lg:grid-cols-12 flex-1 min-h-0 h-full">
-          <DocumentUploadPanel onUploadSuccess={handleUploadSuccess} />
+          <DocumentUploadPanel
+            onUploadStart={handleUploadStart}
+            onUploadSuccess={handleUploadSuccess}
+            onClear={handleClear}
+          />
           <JsonOutputPanel
             jsonData={extractedData}
-            processingTimeMs={847}
-            confidenceScore={0.996}
+            category={category}
+            summary={summary}
+            isProcessing={isProcessing}
+            isStreaming={isStreaming}
+            processingTimeMs={processingTimeMs}
+            confidenceScore={confidenceScore}
+            errorMessage={errorMessage}
+            onRetry={handleRetry}
           />
         </div>
       </div>
