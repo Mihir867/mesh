@@ -24,9 +24,24 @@ import {
 const PdfCanvasPreview = dynamic(() => import("./pdf-canvas-preview"), {
   ssr: false,
   loading: () => (
-    <div className="flex-1 flex flex-col items-center justify-center p-8 text-zinc-400 gap-2">
-      <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-      <span className="text-xs font-mono text-zinc-500">Initializing PDF renderer...</span>
+    <div className="w-full h-full flex-1 flex flex-col items-center gap-5 p-6 animate-pulse">
+      <div className="w-full max-w-[440px] h-[560px] bg-white rounded-[3px] shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-zinc-200 p-6 flex flex-col justify-between">
+        <div className="space-y-3">
+          <div className="h-5 w-40 bg-zinc-200 rounded" />
+          <div className="h-3 w-24 bg-zinc-100 rounded" />
+        </div>
+        <div className="space-y-2.5">
+          <div className="h-3 bg-zinc-100 rounded w-full" />
+          <div className="h-3 bg-zinc-100 rounded w-11/12" />
+          <div className="h-3 bg-zinc-100 rounded w-4/5" />
+          <div className="h-3 bg-zinc-100 rounded w-2/3" />
+        </div>
+        <div className="h-32 bg-zinc-50 rounded border border-zinc-100" />
+        <div className="space-y-2">
+          <div className="h-3 bg-zinc-100 rounded w-3/4" />
+          <div className="h-3 bg-zinc-100 rounded w-1/2" />
+        </div>
+      </div>
     </div>
   ),
 });
@@ -94,8 +109,11 @@ export function DocumentUploadPanel({
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [unsupportedFile, setUnsupportedFile] = useState<UnsupportedFileState | null>(null);
-  const [uploadedFileMeta, setUploadedFileMeta] = useState<UploadedFile | null>(null);
+  const [unsupportedFile, setUnsupportedFile] =
+    useState<UnsupportedFileState | null>(null);
+  const [uploadedFileMeta, setUploadedFileMeta] = useState<UploadedFile | null>(
+    null,
+  );
 
   // Local active file for instantaneous client preview
   const [activeFile, setActiveFile] = useState<File | null>(null);
@@ -105,7 +123,11 @@ export function DocumentUploadPanel({
   // Parsed spreadsheet data
   const [sheets, setSheets] = useState<ParsedSheet[]>([]);
   const [activeSheetIndex, setActiveSheetIndex] = useState(0);
-  const [selectedCell, setSelectedCell] = useState<{ row: number; col: number; val: string } | null>(null);
+  const [selectedCell, setSelectedCell] = useState<{
+    row: number;
+    col: number;
+    val: string;
+  } | null>(null);
   const [xlsxPage, setXlsxPage] = useState(0);
   const XLSX_ROWS_PER_PAGE = 30;
 
@@ -139,7 +161,11 @@ export function DocumentUploadPanel({
     const mime = file.type.toLowerCase();
 
     // Check exact MIME types
-    if (ALLOWED_MIME_TYPES.some((allowed) => mime === allowed || mime.startsWith(allowed))) {
+    if (
+      ALLOWED_MIME_TYPES.some(
+        (allowed) => mime === allowed || mime.startsWith(allowed),
+      )
+    ) {
       return true;
     }
 
@@ -160,7 +186,8 @@ export function DocumentUploadPanel({
     if (
       ext === "xlsx" ||
       ext === "xls" ||
-      mime === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+      mime ===
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
       mime === "application/vnd.ms-excel"
     ) {
       return "xlsx";
@@ -169,7 +196,8 @@ export function DocumentUploadPanel({
     if (
       ext === "docx" ||
       ext === "doc" ||
-      mime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+      mime ===
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
       mime === "application/msword"
     ) {
       return "docx";
@@ -186,18 +214,25 @@ export function DocumentUploadPanel({
       const workbook = XLSX.read(buffer, { type: "array" });
       const parsedSheets: ParsedSheet[] = workbook.SheetNames.map((name) => {
         const sheet = workbook.Sheets[name];
-        const data = XLSX.utils.sheet_to_json<(string | number | null)[]>(sheet, {
-          header: 1,
-          blankrows: false,
-          defval: "",
-        });
+        const data = XLSX.utils.sheet_to_json<(string | number | null)[]>(
+          sheet,
+          {
+            header: 1,
+            blankrows: false,
+            defval: "",
+          },
+        );
         return { name, data };
       });
       setSheets(parsedSheets);
       setActiveSheetIndex(0);
       setXlsxPage(0);
       if (parsedSheets[0]?.data?.[0]?.[0] !== undefined) {
-        setSelectedCell({ row: 0, col: 0, val: String(parsedSheets[0].data[0][0]) });
+        setSelectedCell({
+          row: 0,
+          col: 0,
+          val: String(parsedSheets[0].data[0][0]),
+        });
       }
     } catch (err) {
       console.error("Failed to parse XLSX:", err);
@@ -245,76 +280,94 @@ export function DocumentUploadPanel({
   };
 
   // Core file processing pipeline
-  const processFile = useCallback(async (file: File) => {
-    setErrorMessage(null);
+  const processFile = useCallback(
+    async (file: File) => {
+      setErrorMessage(null);
 
-    // Validate supported formats: PDF, CSV, XLSX, XLS, DOCX, DOC, TXT
-    if (!isFileSupported(file)) {
-      setUnsupportedFile({
-        name: file.name,
-        type: file.type || "unknown/binary",
-        size: file.size,
-      });
-      return;
-    }
+      // Validate supported formats: PDF, CSV, XLSX, XLS, DOCX, DOC, TXT
+      if (!isFileSupported(file)) {
+        setUnsupportedFile({
+          name: file.name,
+          type: file.type || "unknown/binary",
+          size: file.size,
+        });
+        return;
+      }
 
-    setUnsupportedFile(null);
-    setIsUploading(true);
+      setUnsupportedFile(null);
+      setIsUploading(true);
 
-    // Create object URL for client preview
-    const url = URL.createObjectURL(file);
-    setBlobUrl(url);
-    setActiveFile(file);
+      // Create object URL for client preview
+      const url = URL.createObjectURL(file);
+      setBlobUrl(url);
+      setActiveFile(file);
 
-    const type = detectFileType(file);
-    setPreviewType(type);
+      const type = detectFileType(file);
+      setPreviewType(type);
 
-    // Format specific parser triggers
-    if (type === "xlsx") {
-      await parseExcel(file);
-    } else if (type === "csv") {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const text = e.target?.result as string;
-        if (text) parseCsvText(text);
-      };
-      reader.readAsText(file);
-    } else if (type === "text") {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setTextContent((e.target?.result as string) || "");
-      };
-      reader.readAsText(file);
-    }
-
-    // Attempt upload to server API
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const res = await fetch("/api/uploads", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        const fileObj: UploadedFile = {
-          id: data.file?.id || `doc_${Date.now()}`,
-          name: data.file?.name || file.name,
-          fileUrl: data.file?.url || url,
-          url: data.file?.url || url,
-          fileType: data.file?.type || file.type,
-          type: data.file?.type || file.type,
-          fileSize: data.file?.size || file.size,
-          size: data.file?.size || file.size,
-          status: "ready",
-          createdAt: new Date().toISOString(),
+      // Format specific parser triggers
+      if (type === "xlsx") {
+        await parseExcel(file);
+      } else if (type === "csv") {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const text = e.target?.result as string;
+          if (text) parseCsvText(text);
         };
-        setUploadedFileMeta(fileObj);
-        onUploadSuccess?.(fileObj);
-      } else {
-        // Fallback to local mode if Supabase credentials are not configured yet
+        reader.readAsText(file);
+      } else if (type === "text") {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setTextContent((e.target?.result as string) || "");
+        };
+        reader.readAsText(file);
+      }
+
+      // Attempt upload to server API
+      const formData = new FormData();
+      formData.append("file", file);
+
+      try {
+        const res = await fetch("/api/uploads", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const fileObj: UploadedFile = {
+            id: data.file?.id || `doc_${Date.now()}`,
+            name: data.file?.name || file.name,
+            fileUrl: data.file?.url || url,
+            url: data.file?.url || url,
+            fileType: data.file?.type || file.type,
+            type: data.file?.type || file.type,
+            fileSize: data.file?.size || file.size,
+            size: data.file?.size || file.size,
+            status: "ready",
+            createdAt: new Date().toISOString(),
+          };
+          setUploadedFileMeta(fileObj);
+          onUploadSuccess?.(fileObj);
+        } else {
+          // Fallback to local mode if Supabase credentials are not configured yet
+          const fallbackObj: UploadedFile = {
+            id: `local_${Date.now()}`,
+            name: file.name,
+            fileUrl: url,
+            url: url,
+            fileType: file.type,
+            type: file.type,
+            fileSize: file.size,
+            size: file.size,
+            status: "ready",
+            createdAt: new Date().toISOString(),
+          };
+          setUploadedFileMeta(fallbackObj);
+          onUploadSuccess?.(fallbackObj);
+        }
+      } catch {
+        // Local offline fallback
         const fallbackObj: UploadedFile = {
           id: `local_${Date.now()}`,
           name: file.name,
@@ -329,30 +382,15 @@ export function DocumentUploadPanel({
         };
         setUploadedFileMeta(fallbackObj);
         onUploadSuccess?.(fallbackObj);
+      } finally {
+        // Clean skeleton transition
+        setTimeout(() => {
+          setIsUploading(false);
+        }, 600);
       }
-    } catch {
-      // Local offline fallback
-      const fallbackObj: UploadedFile = {
-        id: `local_${Date.now()}`,
-        name: file.name,
-        fileUrl: url,
-        url: url,
-        fileType: file.type,
-        type: file.type,
-        fileSize: file.size,
-        size: file.size,
-        status: "ready",
-        createdAt: new Date().toISOString(),
-      };
-      setUploadedFileMeta(fallbackObj);
-      onUploadSuccess?.(fallbackObj);
-    } finally {
-      // Clean skeleton transition
-      setTimeout(() => {
-        setIsUploading(false);
-      }, 600);
-    }
-  }, [onUploadSuccess]);
+    },
+    [onUploadSuccess],
+  );
 
   // Handle Drag Events across the entire panel
   const handleDragEnter = (e: React.DragEvent) => {
@@ -437,20 +475,21 @@ export function DocumentUploadPanel({
 
   const currentSheet = sheets[activeSheetIndex];
   const totalXlsxRows = currentSheet?.data?.length || 0;
-  const paginatedXlsxRows = currentSheet?.data?.slice(
-    xlsxPage * XLSX_ROWS_PER_PAGE,
-    (xlsxPage + 1) * XLSX_ROWS_PER_PAGE
-  ) || [];
+  const paginatedXlsxRows =
+    currentSheet?.data?.slice(
+      xlsxPage * XLSX_ROWS_PER_PAGE,
+      (xlsxPage + 1) * XLSX_ROWS_PER_PAGE,
+    ) || [];
 
   const filteredCsvRows = (csvData?.rows || []).filter((r) =>
     csvSearch
       ? r.some((c) => c.toLowerCase().includes(csvSearch.toLowerCase()))
-      : true
+      : true,
   );
   const totalCsvRows = filteredCsvRows.length;
   const paginatedCsvRows = filteredCsvRows.slice(
     csvPage * CSV_ROWS_PER_PAGE,
-    (csvPage + 1) * CSV_ROWS_PER_PAGE
+    (csvPage + 1) * CSV_ROWS_PER_PAGE,
   );
 
   return (
@@ -481,7 +520,7 @@ export function DocumentUploadPanel({
           <p className="text-sm font-semibold text-zinc-900">
             Drop document to inspect
           </p>
-          <p className="text-xs text-zinc-500 font-mono mt-1">
+          <p className="text-xs text-zinc-500 mt-1">
             PDF &bull; Excel &bull; Word &bull; CSV &bull; TXT
           </p>
         </div>
@@ -503,11 +542,11 @@ export function DocumentUploadPanel({
               <FileCode className="w-3.5 h-3.5 text-zinc-600" />
             )}
           </div>
-          <span className="text-xs font-mono font-medium text-zinc-800 tracking-tight">
+          <span className="text-xs font-semibold text-zinc-800 tracking-tight">
             DOCUMENT_INSPECTOR
           </span>
           {activeFile && !unsupportedFile && (
-            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-600 border border-zinc-200 uppercase">
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-600 border border-zinc-200 uppercase font-medium">
               {previewType}
             </span>
           )}
@@ -559,7 +598,6 @@ export function DocumentUploadPanel({
 
       {/* DYNAMIC CONTENT CONTAINER: STRICTLY CONSTRAINED */}
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden relative">
-        
         {/* =================================================================== */}
         {/* STATE 1: DELIGHTFUL UNSUPPORTED FORMAT ERROR CARD                   */}
         {/* =================================================================== */}
@@ -573,9 +611,14 @@ export function DocumentUploadPanel({
               <h3 className="text-base font-bold text-zinc-900 mb-1.5">
                 Unsupported Document Format
               </h3>
-              
+
               <p className="text-xs text-zinc-600 leading-relaxed mb-4">
-                You uploaded <span className="font-mono font-medium text-zinc-900 bg-zinc-100 px-1.5 py-0.5 rounded">{unsupportedFile.name}</span>. DocStruct is designed exclusively for structured enterprise documents.
+                You uploaded{" "}
+                <span className="font-mono font-medium text-zinc-900 bg-zinc-100 px-1.5 py-0.5 rounded">
+                  {unsupportedFile.name}
+                </span>
+                . DocStruct is designed exclusively for structured enterprise
+                documents.
               </p>
 
               {/* Delightful accepted formats badge matrix */}
@@ -629,7 +672,6 @@ export function DocumentUploadPanel({
         {isUploading && !unsupportedFile && (
           <div className="flex-1 min-h-0 w-full h-full p-5 sm:p-7 flex flex-col justify-between overflow-hidden bg-white">
             <div className="w-full flex-1 flex flex-col justify-between space-y-6">
-              
               {/* Document Title & Status Skeleton */}
               <div className="flex items-center justify-between pb-5 border-b border-zinc-100 shrink-0">
                 <div className="space-y-2">
@@ -672,7 +714,6 @@ export function DocumentUploadPanel({
                 <div className="h-3.5 bg-zinc-100 rounded w-5/6 animate-pulse" />
                 <div className="h-3.5 bg-zinc-100 rounded w-1/2 animate-pulse" />
               </div>
-
             </div>
           </div>
         )}
@@ -693,7 +734,8 @@ export function DocumentUploadPanel({
               Upload or drag document here
             </h3>
             <p className="text-xs text-zinc-500 max-w-[280px] leading-relaxed mb-6">
-              Drop PDF, Excel (.xlsx, .xls), Word (.docx, .doc), CSV, or raw text to inspect and parse schema.
+              Drop PDF, Excel (.xlsx, .xls), Word (.docx, .doc), CSV, or raw
+              text to inspect and parse schema.
             </p>
 
             <button
@@ -734,19 +776,14 @@ export function DocumentUploadPanel({
         {/* =================================================================== */}
         {!isUploading && activeFile && !unsupportedFile && (
           <div className="flex-1 min-h-0 flex flex-col overflow-hidden p-3 bg-[#f4f5f7]">
-            
             {/* 4A: PDF PREVIEW (Multi-page continuous scroll, high-DPI retina rendering) */}
             {previewType === "pdf" && blobUrl && (
-              <PdfCanvasPreview
-                fileUrl={blobUrl}
-                fileName={activeFile.name}
-              />
+              <PdfCanvasPreview fileUrl={blobUrl} fileName={activeFile.name} />
             )}
 
             {/* 4B: XLSX / EXCEL PREVIEW (Strictly Contained, NO OVERFLOW) */}
             {previewType === "xlsx" && (
               <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-white rounded-lg border border-zinc-200 shadow-sm">
-                
                 {/* Excel Formula Bar */}
                 <div className="h-8 px-3 bg-zinc-50 border-b border-zinc-200 flex items-center gap-2 text-xs font-mono shrink-0 select-none">
                   <span className="text-zinc-600 font-bold text-[11px] px-1.5 py-0.5 bg-white rounded border border-zinc-200">
@@ -754,7 +791,9 @@ export function DocumentUploadPanel({
                       ? `${getColLetter(selectedCell.col)}${selectedCell.row + 1}`
                       : "A1"}
                   </span>
-                  <span className="text-zinc-400 font-sans font-semibold">fx</span>
+                  <span className="text-zinc-400 font-sans font-semibold">
+                    fx
+                  </span>
                   <div className="flex-1 px-2 py-0.5 bg-white border border-zinc-200 rounded text-zinc-800 text-[11px] truncate">
                     {selectedCell?.val ?? ""}
                   </div>
@@ -781,7 +820,8 @@ export function DocumentUploadPanel({
                       </thead>
                       <tbody className="divide-y divide-zinc-200">
                         {paginatedXlsxRows.map((row, rOffset) => {
-                          const rowIdx = xlsxPage * XLSX_ROWS_PER_PAGE + rOffset;
+                          const rowIdx =
+                            xlsxPage * XLSX_ROWS_PER_PAGE + rOffset;
                           return (
                             <tr
                               key={rowIdx}
@@ -857,16 +897,23 @@ export function DocumentUploadPanel({
                         </button>
                         <span>
                           {xlsxPage * XLSX_ROWS_PER_PAGE + 1}-
-                          {Math.min((xlsxPage + 1) * XLSX_ROWS_PER_PAGE, totalXlsxRows)}{" "}
+                          {Math.min(
+                            (xlsxPage + 1) * XLSX_ROWS_PER_PAGE,
+                            totalXlsxRows,
+                          )}{" "}
                           of {totalXlsxRows}
                         </span>
                         <button
                           onClick={() =>
                             setXlsxPage((p) =>
-                              (p + 1) * XLSX_ROWS_PER_PAGE < totalXlsxRows ? p + 1 : p
+                              (p + 1) * XLSX_ROWS_PER_PAGE < totalXlsxRows
+                                ? p + 1
+                                : p,
                             )
                           }
-                          disabled={(xlsxPage + 1) * XLSX_ROWS_PER_PAGE >= totalXlsxRows}
+                          disabled={
+                            (xlsxPage + 1) * XLSX_ROWS_PER_PAGE >= totalXlsxRows
+                          }
                           className="p-1 rounded hover:bg-zinc-200 disabled:opacity-30"
                           title="Next rows"
                         >
@@ -885,7 +932,6 @@ export function DocumentUploadPanel({
             {/* 4C: CSV PREVIEW (Strictly Contained, NO OVERFLOW) */}
             {previewType === "csv" && csvData && (
               <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-white rounded-lg border border-zinc-200 shadow-sm">
-                
                 {/* Search Bar */}
                 <div className="h-9 px-3 bg-zinc-50 border-b border-zinc-200 flex items-center justify-between gap-2 shrink-0 text-xs">
                   <div className="flex items-center gap-2 flex-1 max-w-xs">
@@ -902,7 +948,8 @@ export function DocumentUploadPanel({
                     />
                   </div>
                   <div className="text-[11px] font-mono text-zinc-500 shrink-0">
-                    {totalCsvRows} records &bull; {csvData.headers.length} columns
+                    {totalCsvRows} records &bull; {csvData.headers.length}{" "}
+                    columns
                   </div>
                 </div>
 
@@ -956,8 +1003,11 @@ export function DocumentUploadPanel({
                   <div className="shrink-0 h-8 px-3 bg-zinc-50 border-t border-zinc-200 flex items-center justify-between text-xs font-mono text-zinc-500">
                     <span>
                       Showing {csvPage * CSV_ROWS_PER_PAGE + 1}-
-                      {Math.min((csvPage + 1) * CSV_ROWS_PER_PAGE, totalCsvRows)} of{" "}
-                      {totalCsvRows}
+                      {Math.min(
+                        (csvPage + 1) * CSV_ROWS_PER_PAGE,
+                        totalCsvRows,
+                      )}{" "}
+                      of {totalCsvRows}
                     </span>
                     <div className="flex items-center gap-1">
                       <button
@@ -970,10 +1020,14 @@ export function DocumentUploadPanel({
                       <button
                         onClick={() =>
                           setCsvPage((p) =>
-                            (p + 1) * CSV_ROWS_PER_PAGE < totalCsvRows ? p + 1 : p
+                            (p + 1) * CSV_ROWS_PER_PAGE < totalCsvRows
+                              ? p + 1
+                              : p,
                           )
                         }
-                        disabled={(csvPage + 1) * CSV_ROWS_PER_PAGE >= totalCsvRows}
+                        disabled={
+                          (csvPage + 1) * CSV_ROWS_PER_PAGE >= totalCsvRows
+                        }
                         className="p-1 rounded hover:bg-zinc-200 disabled:opacity-30"
                       >
                         <ChevronRight className="w-3.5 h-3.5" />
@@ -994,7 +1048,8 @@ export function DocumentUploadPanel({
                   {activeFile.name}
                 </h4>
                 <p className="text-xs text-zinc-500 max-w-xs mb-4">
-                  Microsoft Word Document &bull; {formatFileSize(activeFile.size)}
+                  Microsoft Word Document &bull;{" "}
+                  {formatFileSize(activeFile.size)}
                 </p>
                 <div className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-md border border-blue-200 text-xs font-mono">
                   Word Document Loaded &bull; Ready for Extraction
@@ -1008,7 +1063,6 @@ export function DocumentUploadPanel({
                 <pre className="whitespace-pre-wrap">{textContent}</pre>
               </div>
             )}
-
           </div>
         )}
       </div>
@@ -1026,11 +1080,7 @@ export function DocumentUploadPanel({
               REF: {uploadedFileMeta.id}
             </span>
           )}
-          {activeFile && (
-            <span>
-              SIZE: {formatFileSize(activeFile.size)}
-            </span>
-          )}
+          {activeFile && <span>SIZE: {formatFileSize(activeFile.size)}</span>}
           <span className="text-zinc-700 font-medium flex items-center gap-1">
             READY
             <ChevronRight className="w-3 h-3 text-zinc-400" />

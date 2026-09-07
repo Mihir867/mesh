@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState, memo } from "react";
 import type { PDFDocumentProxy, RenderTask } from "pdfjs-dist";
-import { ZoomIn, ZoomOut, ExternalLink, Loader2 } from "lucide-react";
+import { ZoomIn, ZoomOut, ExternalLink } from "lucide-react";
 
 interface PdfCanvasPreviewProps {
   fileUrl: string;
@@ -111,12 +111,22 @@ const PdfPageItem = memo(function PdfPageItem({
       }}
     >
       {!isRendered && (
-        <div className="absolute inset-0 flex items-center justify-center bg-zinc-50/80">
-          <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
+        <div className="absolute inset-0 flex flex-col justify-between p-6 bg-white animate-pulse">
+          <div className="h-4 w-1/3 bg-zinc-200 rounded" />
+          <div className="space-y-3">
+            <div className="h-3 w-full bg-zinc-100 rounded" />
+            <div className="h-3 w-5/6 bg-zinc-100 rounded" />
+            <div className="h-3 w-4/6 bg-zinc-100 rounded" />
+          </div>
+          <div className="h-28 w-full bg-zinc-50 rounded border border-zinc-100" />
+          <div className="space-y-2">
+            <div className="h-3 w-3/4 bg-zinc-100 rounded" />
+            <div className="h-3 w-1/2 bg-zinc-100 rounded" />
+          </div>
         </div>
       )}
       <canvas ref={canvasRef} className="block mx-auto" />
-      <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-sm text-[10px] text-white/90 font-mono select-none">
+      <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-sm text-[10px] text-white/90 select-none">
         {pageNumber}
       </div>
     </div>
@@ -188,7 +198,7 @@ export function PdfCanvasPreview({ fileUrl, fileName = "Document.pdf" }: PdfCanv
   return (
     <div className="flex-1 min-h-0 flex flex-col h-full overflow-hidden bg-zinc-100/70 rounded-lg border border-zinc-200">
       {/* Top sticky controls bar */}
-      <div className="shrink-0 flex items-center justify-between px-3.5 py-2.5 bg-white border-b border-zinc-200 text-xs font-mono select-none">
+      <div className="shrink-0 flex items-center justify-between px-3.5 py-2.5 bg-white border-b border-zinc-200 text-xs select-none">
         <div className="flex items-center gap-2 text-zinc-700 min-w-0">
           <span className="px-1.5 py-0.5 rounded text-[10px] bg-red-50 text-red-600 border border-red-200 font-semibold shrink-0">
             PDF
@@ -213,7 +223,7 @@ export function PdfCanvasPreview({ fileUrl, fileName = "Document.pdf" }: PdfCanv
             >
               <ZoomOut className="w-3.5 h-3.5" />
             </button>
-            <span className="text-[10px] px-1 font-mono">{Math.round(zoomScale * 100)}%</span>
+            <span className="text-[10px] px-1">{Math.round(zoomScale * 100)}%</span>
             <button
               onClick={() => setZoomScale((z) => Math.min(1.8, +(z + 0.15).toFixed(2)))}
               className="p-1 hover:text-zinc-900 rounded hover:bg-zinc-200"
@@ -241,9 +251,24 @@ export function PdfCanvasPreview({ fileUrl, fileName = "Document.pdf" }: PdfCanv
         className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 sm:p-6 flex flex-col items-center gap-5 scroll-smooth"
       >
         {isLoading && (
-          <div className="my-auto flex flex-col items-center justify-center p-8 text-zinc-400 gap-2">
-            <Loader2 className="w-6 h-6 animate-spin text-indigo-600" />
-            <span className="text-xs font-mono text-zinc-500">Rendering high-resolution document...</span>
+          <div className="w-full flex-1 flex flex-col items-center gap-5 p-4 animate-pulse">
+            <div className="w-full max-w-[440px] h-[560px] bg-white rounded-[3px] shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-zinc-200 p-6 flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="h-5 w-40 bg-zinc-200 rounded" />
+                <div className="h-3 w-24 bg-zinc-100 rounded" />
+              </div>
+              <div className="space-y-2.5">
+                <div className="h-3 bg-zinc-100 rounded w-full" />
+                <div className="h-3 bg-zinc-100 rounded w-11/12" />
+                <div className="h-3 bg-zinc-100 rounded w-4/5" />
+                <div className="h-3 bg-zinc-100 rounded w-2/3" />
+              </div>
+              <div className="h-32 bg-zinc-50 rounded border border-zinc-100" />
+              <div className="space-y-2">
+                <div className="h-3 bg-zinc-100 rounded w-3/4" />
+                <div className="h-3 bg-zinc-100 rounded w-1/2" />
+              </div>
+            </div>
           </div>
         )}
 

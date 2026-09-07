@@ -3,10 +3,10 @@ import localFont from "next/font/local";
 import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 
-const clashDisplay = localFont({
-  src: "../../public/fonts/ClashDisplay-Variable.woff2",
-  variable: "--font-clash",
-  weight: "200 700",
+const openSans = localFont({
+  src: "../../public/fonts/OpenSans-Regular.ttf",
+  variable: "--font-open-sans",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -19,10 +19,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <ClerkProvider>
       <html
         lang="en"
-        className={`${clashDisplay.variable} h-full antialiased`}
-        style={{ fontFamily: "var(--font-clash)" }}
+        className={`${openSans.variable} font-sans h-full antialiased`}
+        style={{ fontFamily: "var(--font-open-sans), 'Open Sans', sans-serif" }}
       >
-        <body className="min-h-full flex flex-col" style={{ fontFamily: "var(--font-clash)" }}>
+        <body
+          className="min-h-full flex flex-col font-sans"
+          style={{ fontFamily: "var(--font-open-sans), 'Open Sans', sans-serif" }}
+        >
           {children}
         </body>
       </html>

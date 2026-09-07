@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { prisma } from "@/lib/prisma";
+import { DocumentType } from "@prisma/client";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB in bytes
 const BUCKET_NAME = process.env.SUPABASE_BUCKET_NAME || "MESH";
@@ -14,8 +17,71 @@ const ALLOWED_MIME_TYPES = [
   "text/plain",
 ];
 
+// Map MIME types to DocumentType enum
+function mapMimeTypeToDocumentType(mimeType: string, fileName: string): DocumentType {
+  const ext = fileName.split(".").pop()?.toLowerCase();
+  
+  if (mimeType === "application/pdf") return DocumentType.PDF;
+  if (mimeType === "text/csv") return DocumentType.CSV;
+  if (
+    mimeType === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+    mimeType === "application/vnd.ms-excel" ||
+    ext === "xlsx" ||
+    ext === "xls"
+  ) {
+    return DocumentType.XLSX;
+  }
+  if (
+    mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+    mimeType === "application/msword" ||
+    ext === "docx" ||
+    ext === "doc"
+  ) {
+    return DocumentType.DOCX;
+  }
+  if (mimeType === "text/plain" || ext === "txt") return DocumentType.TXT;
+  
+  // Default fallback (shouldn't reach here if validation passed)
+  return DocumentType.TXT;
+}
+
 export async function POST(req: NextRequest) {
   try {
+    // 0. Authenticate user with Clerk
+    const { userId: clerkUserId } = await auth();
+    
+    if (!clerkUserId) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized. Please sign in." },
+        { status: 401 },
+      );
+    }
+
+    // Find or create user in database
+    let user = await prisma.user.findUnique({
+      where: { clerkId: clerkUserId },
+    });
+
+    // Auto-create user if they don't exist (handles first-time users)
+    if (!user) {
+      const { clerkClient } = await import("@clerk/nextjs/server");
+      const client = await clerkClient();
+      const clerkUser = await client.users.getUser(clerkUserId);
+      
+      user = await prisma.user.create({
+        data: {
+          clerkId: clerkUserId,
+          email: clerkUser.emailAddresses[0]?.emailAddress || `${clerkUserId}@placeholder.local`,
+          name: clerkUser.firstName && clerkUser.lastName 
+            ? `${clerkUser.firstName} ${clerkUser.lastName}` 
+            : clerkUser.firstName || clerkUser.username || null,
+          avatarUrl: clerkUser.imageUrl || null,
+        },
+      });
+      
+      console.log(`[Auto-created user]: ${user.email} (${user.id})`);
+    }
+
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
 
@@ -81,16 +147,36 @@ export async function POST(req: NextRequest) {
       .from(BUCKET_NAME)
       .getPublicUrl(uploadData.path);
 
-    // 7. Success response
+    // 7. Create Document row in PostgreSQL
+    const fileType = mapMimeTypeToDocumentType(file.type, file.name);
+    
+    const document = await prisma.document.create({
+      data: {
+        userId: user.id,
+        name: file.name,
+        fileUrl: urlData.publicUrl,
+        fileType: fileType,
+        mimeType: file.type,
+        fileSize: file.size,
+        status: "UPLOADED",
+      },
+    });
+
+    // 8. Success response with documentId
     return NextResponse.json({
       success: true,
       file: {
-        name: file.name,
+        id: document.id,
+        name: document.name,
         storagePath: uploadData.path,
-        url: urlData.publicUrl,
-        size: file.size,
-        type: file.type,
+        url: document.fileUrl,
+        size: document.fileSize,
+        type: document.fileType,
+        mimeType: document.mimeType,
+        status: document.status,
+        createdAt: document.createdAt.toISOString(),
       },
+      documentId: document.id,
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
