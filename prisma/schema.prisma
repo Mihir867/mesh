@@ -1,0 +1,162 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// -----------------------------------------------------------------------------
+// ENUMS
+// -----------------------------------------------------------------------------
+
+enum DocumentType {
+  PDF
+  CSV
+  XLSX
+  DOCX
+  TXT
+}
+
+enum DocumentStatus {
+  UPLOADED       // File stored in R2/S3, queued
+  PROCESSING     // Parsing text & running LLM extraction
+  COMPLETED      // Extraction done, split-view ready
+  FAILED         // Error occurred during any stage
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+}
+
+// -----------------------------------------------------------------------------
+// USER
+// -----------------------------------------------------------------------------
+
+model User {
+  id        String     @id @default(uuid()) @db.Uuid
+  clerkId   String     @unique @map("clerk_id")
+  email     String     @unique
+  name      String?
+  avatarUrl String?    @map("avatar_url")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  documents Document[]
+
+  @@map("users")
+}
+
+// -----------------------------------------------------------------------------
+// DOCUMENT
+// The uploaded file, its storage URL, cached raw text, and processing state.
+//
+// IMPORTANT QUERY NOTE:
+// The `rawText` column can be very large (100KB+ for long PDFs).
+// When fetching document LISTS, always use `select` to exclude it:
+//
+//   prisma.document.findMany({
+//     where: { userId },
+//     select: {                    <-- explicit select, rawText excluded
+//       id: true, name: true, fileType: true,
+//       mimeType: true, fileSize: true, status: true, createdAt: true,
+//       extraction: { select: { category: true } }
+//     }
+//   })
+//
+// Only fetch `rawText` when opening the document detail / chat view.
+// -----------------------------------------------------------------------------
+
+model Document {
+  id           String         @id @default(uuid()) @db.Uuid
+  userId       String         @map("user_id") @db.Uuid
+
+  // File identity
+  name         String                            // Original filename
+  fileUrl      String         @map("file_url")   // S3 / R2 object URL
+  fileType     DocumentType   @map("file_type")  // Enum: PDF, CSV, etc.
+  mimeType     String         @map("mime_type")  // e.g. "application/pdf", "text/csv"
+  fileSize     Int            @map("file_size")  // Bytes
+
+  // Processing lifecycle
+  status       DocumentStatus @default(UPLOADED)
+  errorMessage String?        @map("error_message") @db.Text
+
+  // Cached parsed text (used as context for Chat Sidebar & re-extraction)
+  rawText      String?        @map("raw_text") @db.Text
+
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  extraction   Extraction?
+  chatMessages ChatMessage[]
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([status])
+  @@map("documents")
+}
+
+// -----------------------------------------------------------------------------
+// EXTRACTION
+// The structured output from the pipeline.
+//
+// `category` and `summary` are promoted to typed columns because:
+//   1. The documents list page shows a category badge — querying a JSONB blob
+//      for every row in a list is expensive and unindexable.
+//   2. The summary is displayed on hover/preview cards in the list.
+//   3. Filtering documents by category (e.g. "show me all Invoices") requires
+//      an indexed column, not a JSONB path query.
+//
+// `data` (JSONB) holds the array of extracted fields with grounding:
+//   [
+//     { "key": "vendorName", "value": "Acme", "confidence": 0.97,
+//       "source_snippet": "Vendor: Acme Corp" },
+//     ...
+//   ]
+// -----------------------------------------------------------------------------
+
+model Extraction {
+  id         String   @id @default(uuid()) @db.Uuid
+  documentId String   @unique @map("document_id") @db.Uuid
+
+  // Promoted from JSONB for indexing & list-level display
+  category   String                              // "Invoice", "Contract", "Report", etc.
+  summary    String   @db.Text                   // 1-2 sentence overview
+
+  // The grounded extracted fields array (JSONB)
+  data       Json     @db.JsonB
+
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([category])
+  @@map("extractions")
+}
+
+// -----------------------------------------------------------------------------
+// CHAT MESSAGE
+// Persisted Q&A history for the document sidebar.
+// -----------------------------------------------------------------------------
+
+model ChatMessage {
+  id         String      @id @default(uuid()) @db.Uuid
+  documentId String      @map("document_id") @db.Uuid
+  role       MessageRole
+  content    String      @db.Text
+
+  createdAt  DateTime    @default(now()) @map("created_at")
+
+  // Relations
+  document   Document    @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId, createdAt(sort: Asc)])
+  @@map("chat_messages")
+}
