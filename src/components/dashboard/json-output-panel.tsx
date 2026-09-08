@@ -25,6 +25,7 @@ export interface JsonOutputPanelProps {
   confidenceScore?: number;
   errorMessage?: string | null;
   onRetry?: () => void;
+  onOpenChat?: () => void;
 }
 
 export function JsonOutputPanel({
@@ -37,6 +38,7 @@ export function JsonOutputPanel({
   confidenceScore = 0.98,
   errorMessage = null,
   onRetry,
+  onOpenChat,
 }: JsonOutputPanelProps) {
   const [copied, setCopied] = useState(false);
   const [renderedLineCount, setRenderedLineCount] = useState<number>(0);
@@ -475,12 +477,12 @@ export function JsonOutputPanel({
         </div>
 
         <button
-          onClick={handleDownload}
+          onClick={onOpenChat}
           disabled={!jsonData || isProcessing}
-          className="w-full sm:w-auto px-4 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium text-xs tracking-wide transition-all shadow-sm active:scale-95 flex items-center justify-center gap-2 font-sans"
+          className="w-full sm:w-auto px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium text-xs tracking-wide transition-all shadow-sm active:scale-95 flex items-center justify-center gap-2 font-sans"
         >
-          <Database className="w-3.5 h-3.5" />
-          EXPORT SCHEMA
+          <Sparkles className="w-3.5 h-3.5" />
+          Chat with Document
         </button>
       </div>
     </div>

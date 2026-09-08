@@ -46,12 +46,39 @@ const PdfCanvasPreview = dynamic(() => import("./pdf-canvas-preview"), {
   ),
 });
 
+// Dynamically import client-side DOCX Word renderer with SSR disabled
+const DocxViewer = dynamic(() => import("./docx-viewer"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex-1 flex flex-col items-center gap-5 p-6 animate-pulse">
+      <div className="w-full max-w-[480px] h-[580px] bg-white rounded-[3px] shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-zinc-200 p-8 flex flex-col justify-between">
+        <div className="space-y-4">
+          <div className="h-5 w-48 bg-zinc-200 rounded" />
+          <div className="h-3 w-28 bg-zinc-100 rounded" />
+        </div>
+        <div className="space-y-3">
+          <div className="h-3 bg-zinc-100 rounded w-full" />
+          <div className="h-3 bg-zinc-100 rounded w-11/12" />
+          <div className="h-3 bg-zinc-100 rounded w-4/5" />
+          <div className="h-3 bg-zinc-100 rounded w-2/3" />
+        </div>
+        <div className="h-28 bg-zinc-50 rounded border border-zinc-100" />
+        <div className="space-y-2">
+          <div className="h-3 bg-zinc-100 rounded w-3/4" />
+          <div className="h-3 bg-zinc-100 rounded w-1/2" />
+        </div>
+      </div>
+    </div>
+  ),
+});
+
 export interface UploadedFile {
   id?: string;
   name: string;
   fileUrl?: string;
   url?: string;
   fileType?: string;
+  mimeType?: string;
   type?: string;
   fileSize?: number;
   size?: number;
@@ -63,6 +90,7 @@ export interface DocumentUploadPanelProps {
   onUploadStart?: () => void;
   onUploadSuccess?: (file: UploadedFile) => void;
   onClear?: () => void;
+  restoredFile?: UploadedFile | null;
 }
 
 // Exactly the supported MIME types requested by the user
@@ -109,6 +137,7 @@ export function DocumentUploadPanel({
   onUploadStart,
   onUploadSuccess,
   onClear,
+  restoredFile,
 }: DocumentUploadPanelProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -182,9 +211,9 @@ export function DocumentUploadPanel({
   };
 
   // Determine preview type
-  const detectFileType = (file: File): PreviewType => {
+  const detectFileType = (file: { name: string; type?: string }): PreviewType => {
     const ext = file.name.split(".").pop()?.toLowerCase();
-    const mime = file.type.toLowerCase();
+    const mime = (file.type || "").toLowerCase();
 
     if (ext === "pdf" || mime === "application/pdf") return "pdf";
     if (
@@ -210,6 +239,55 @@ export function DocumentUploadPanel({
 
     return "unsupported";
   };
+
+  // Sync restoredFile from parent when available
+  useEffect(() => {
+    if (restoredFile && !activeFile) {
+      setUploadedFileMeta(restoredFile);
+      const type = detectFileType({
+        name: restoredFile.name,
+        type: restoredFile.fileType || restoredFile.type,
+      });
+      setPreviewType(type);
+    } else if (!restoredFile && !activeFile && uploadedFileMeta) {
+      setUploadedFileMeta(null);
+      setPreviewType("unsupported");
+    }
+  }, [restoredFile, activeFile]);
+
+  // Load remote data for restored spreadsheet / text files
+  useEffect(() => {
+    const url = uploadedFileMeta?.fileUrl || uploadedFileMeta?.url;
+    if (!url || activeFile) return;
+
+    if (previewType === "xlsx" && sheets.length === 0) {
+      fetch(url)
+        .then((res) => res.arrayBuffer())
+        .then((buffer) => {
+          const workbook = XLSX.read(buffer, { type: "array" });
+          const parsedSheets: ParsedSheet[] = workbook.SheetNames.map((name) => {
+            const sheet = workbook.Sheets[name];
+            const data = XLSX.utils.sheet_to_json<(string | number | null)[]>(
+              sheet,
+              { header: 1 }
+            );
+            return { name, data };
+          });
+          setSheets(parsedSheets);
+        })
+        .catch((err) => console.error("[DocumentUploadPanel] Error loading restored excel:", err));
+    } else if (previewType === "csv" && !csvData) {
+      fetch(url)
+        .then((res) => res.text())
+        .then((text) => parseCsvText(text))
+        .catch((err) => console.error("[DocumentUploadPanel] Error loading restored csv:", err));
+    } else if (previewType === "text" && !textContent) {
+      fetch(url)
+        .then((res) => res.text())
+        .then((text) => setTextContent(text))
+        .catch((err) => console.error("[DocumentUploadPanel] Error loading restored text:", err));
+    }
+  }, [uploadedFileMeta, activeFile, previewType, sheets.length, csvData, textContent]);
 
   // Parse XLSX using SheetJS
   const parseExcel = async (file: File) => {
@@ -551,7 +629,7 @@ export function DocumentUploadPanel({
           <span className="text-xs font-semibold text-zinc-800 tracking-tight">
             DOCUMENT_INSPECTOR
           </span>
-          {activeFile && !unsupportedFile && (
+          {(activeFile || uploadedFileMeta) && !unsupportedFile && (
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-600 border border-zinc-200 uppercase font-medium">
               {previewType}
             </span>
@@ -559,9 +637,9 @@ export function DocumentUploadPanel({
         </div>
 
         <div className="flex items-center gap-1.5">
-          {(activeFile || unsupportedFile) && (
+          {(activeFile || uploadedFileMeta || unsupportedFile) && (
             <>
-              {activeFile && (
+              {(activeFile || uploadedFileMeta) && (
                 <button
                   onClick={() => setIsFullscreen(!isFullscreen)}
                   className="p-1.5 rounded-md hover:bg-zinc-100 text-zinc-500 hover:text-zinc-800 transition-colors"
@@ -727,7 +805,7 @@ export function DocumentUploadPanel({
         {/* =================================================================== */}
         {/* STATE 3: EMPTY DROPZONE STATE (LIGHT THEME)                          */}
         {/* =================================================================== */}
-        {!isUploading && !activeFile && !unsupportedFile && (
+        {!isUploading && !activeFile && !uploadedFileMeta && !unsupportedFile && (
           <div
             onClick={() => fileInputRef.current?.click()}
             className="flex-1 p-6 sm:p-8 flex flex-col items-center justify-center text-center cursor-pointer group hover:bg-white transition-colors"
@@ -780,11 +858,14 @@ export function DocumentUploadPanel({
         {/* =================================================================== */}
         {/* STATE 4: PREVIEW RENDERERS                                          */}
         {/* =================================================================== */}
-        {!isUploading && activeFile && !unsupportedFile && (
+        {!isUploading && (activeFile || uploadedFileMeta) && !unsupportedFile && (
           <div className="flex-1 min-h-0 flex flex-col overflow-hidden p-3 bg-[#f4f5f7]">
             {/* 4A: PDF PREVIEW (Multi-page continuous scroll, high-DPI retina rendering) */}
-            {previewType === "pdf" && blobUrl && (
-              <PdfCanvasPreview fileUrl={blobUrl} fileName={activeFile.name} />
+            {previewType === "pdf" && (blobUrl || uploadedFileMeta?.fileUrl || uploadedFileMeta?.url) && (
+              <PdfCanvasPreview
+                fileUrl={blobUrl || uploadedFileMeta?.fileUrl || uploadedFileMeta?.url!}
+                fileName={activeFile?.name || uploadedFileMeta?.name || "Document.pdf"}
+              />
             )}
 
             {/* 4B: XLSX / EXCEL PREVIEW (Strictly Contained, NO OVERFLOW) */}
@@ -1046,27 +1127,35 @@ export function DocumentUploadPanel({
 
             {/* 4D: WORD DOCUMENT PREVIEW (.docx, .doc) */}
             {previewType === "docx" && (
-              <div className="flex-1 min-h-0 flex flex-col items-center justify-center p-6 bg-white rounded-lg border border-zinc-200 text-center shadow-sm">
-                <div className="w-16 h-16 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 mb-4 shadow-sm">
-                  <File className="w-8 h-8" />
-                </div>
-                <h4 className="text-sm font-semibold text-zinc-900 mb-1">
-                  {activeFile.name}
-                </h4>
-                <p className="text-xs text-zinc-500 max-w-xs mb-4">
-                  Microsoft Word Document &bull;{" "}
-                  {formatFileSize(activeFile.size)}
-                </p>
-                <div className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-md border border-blue-200 text-xs font-mono">
-                  Word Document Loaded &bull; Ready for Extraction
-                </div>
-              </div>
+              <DocxViewer
+                file={activeFile}
+                fileUrl={blobUrl || uploadedFileMeta?.fileUrl || uploadedFileMeta?.url}
+                fileName={activeFile?.name || uploadedFileMeta?.name || "Document.docx"}
+              />
             )}
 
             {/* 4E: TEXT PREVIEW */}
             {previewType === "text" && (
-              <div className="flex-1 min-h-0 overflow-auto p-4 bg-white rounded-lg border border-zinc-200 font-mono text-xs text-zinc-800 leading-relaxed shadow-sm">
-                <pre className="whitespace-pre-wrap">{textContent}</pre>
+              <div className="flex-1 min-h-0 flex flex-col bg-white rounded-lg border border-zinc-200 shadow-sm overflow-hidden font-sans">
+                <div className="shrink-0 px-4 py-2 bg-zinc-50 border-b border-zinc-200 flex items-center justify-between text-xs text-zinc-600 select-none">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-3.5 h-3.5 text-zinc-600" />
+                    <span className="font-medium text-zinc-800 text-[11px] truncate max-w-[200px]">
+                      {activeFile?.name || uploadedFileMeta?.name || "Document.txt"}
+                    </span>
+                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-zinc-100 text-zinc-700 border border-zinc-200 uppercase">
+                      TXT
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-zinc-400 font-mono">
+                    {textContent.length} chars
+                  </span>
+                </div>
+                <div className="flex-1 min-h-0 overflow-auto p-4 sm:p-6 font-mono text-xs text-zinc-800 leading-relaxed select-text bg-[#fcfcfc]">
+                  <pre className="whitespace-pre-wrap font-mono font-normal">
+                    {textContent || "(Empty file)"}
+                  </pre>
+                </div>
               </div>
             )}
           </div>
