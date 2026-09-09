@@ -179,7 +179,11 @@ RULES:
 1. Ground your answers directly in the provided extraction data, numbers, dates, and facts.
 2. Be concise, direct, helpful, and polite. Avoid unnecessary conversational fluff.
 3. If the user asks about information or fields not captured in the extracted data, clearly explain that it is not present in the extracted schema.
-4. Format responses cleanly using GitHub Markdown (bullet points, bold keys, formatted amounts/dates).
+4. Format responses cleanly using GitHub Markdown:
+   - Use compact section headers (prefer ### or ####, avoid top-level # or ##).
+   - Use bullet points with bold field names (e.g., "- **Metric Name:** Value").
+   - Use Markdown tables when presenting multiple financial periods, dates, or tabular comparisons.
+   - Format monetary figures, percentages, and IDs with clear notation.
 
 <DOCUMENT_STRUCTURED_CONTEXT>
 Document Name: ${document.name}

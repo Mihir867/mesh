@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { FileText } from "lucide-react";
 import Link from "next/link";
 import { CTAButtons, HeaderCTAButtons, FooterLink } from "@/components/landing/cta-buttons";
+import { LandingProductPreview } from "@/components/landing/landing-product-preview";
 
 export default async function Home() {
   const { userId } = await auth();
@@ -59,7 +60,7 @@ export default async function Home() {
 
       {/* Hero Section - Left-aligned, clean, single focus */}
       <main className="flex-1 flex flex-col justify-center px-6 lg:px-8 py-24">
-        <div className="max-w-4xl mx-auto w-full">
+        <div className="max-w-6xl mx-auto w-full">
           {/* Hero Content */}
           <div className="space-y-6 mb-16">
             <h1 style={{
@@ -112,32 +113,9 @@ export default async function Home() {
             )}
           </div>
 
-          {/* Product Screenshot - Real UI preview */}
-          <div style={{
-            border: '1px solid var(--color-border)',
-            borderRadius: 'var(--radius-lg)',
-            overflow: 'hidden',
-            background: 'var(--color-surface)',
-            marginBottom: '96px'
-          }}>
-            <div style={{
-              padding: '48px',
-              background: 'var(--color-bg)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              minHeight: '400px'
-            }}>
-              <div style={{
-                textAlign: 'center',
-                color: 'var(--color-text-tertiary)',
-                fontSize: '13px',
-                fontWeight: 'var(--font-weight-medium)'
-              }}>
-                <FileText className="w-12 h-12 mx-auto mb-3" style={{ opacity: 0.3 }} />
-                Product Interface Preview
-              </div>
-            </div>
+          {/* Interactive Product Showcase */}
+          <div className="mb-24">
+            <LandingProductPreview />
           </div>
 
           {/* Features - Simple three-column grid, no icons glued to labels */}
