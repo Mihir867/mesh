@@ -172,7 +172,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     // This reduces token consumption by over 95%, saving costs and minimizing latency.
     const extraction = document.extraction;
     const systemInstruction = `
-You are DocStruct AI, an intelligent, precise assistant specialized in answering questions about this specific document.
+You are MESH AI, an intelligent, precise assistant specialized in answering questions about this specific document.
 You answer strictly based on the structured extraction JSON and summary provided below.
 
 RULES:

@@ -582,9 +582,13 @@ export function DocumentUploadPanel({
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
-      className={`lg:col-span-6 xl:col-span-5 border-b lg:border-b-0 lg:border-r border-zinc-200 bg-[#fafbfc] flex flex-col justify-between relative select-none h-full min-h-0 overflow-hidden ${
-        isFullscreen ? "fixed inset-0 z-50 bg-white" : ""
+      className={`lg:col-span-6 xl:col-span-5 border-b lg:border-b-0 lg:border-r flex flex-col relative select-none h-full min-h-0 overflow-hidden ${
+        isFullscreen ? "fixed inset-0 z-50" : ""
       }`}
+      style={{
+        borderColor: 'var(--color-border)',
+        background: 'var(--color-surface)'
+      }}
     >
       {/* Hidden File Input strictly restricting formats */}
       <input
@@ -595,54 +599,121 @@ export function DocumentUploadPanel({
         onChange={handleFileInputChange}
       />
 
-      {/* DRAG OVERLAY: Full panel trigger */}
+      {/* DRAG OVERLAY */}
       {isDragging && (
-        <div className="absolute inset-0 z-50 bg-white/95 backdrop-blur-sm border-2 border-dashed border-indigo-600 p-8 flex flex-col items-center justify-center text-center">
-          <div className="w-14 h-14 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center mb-3 shadow-sm">
-            <Upload className="w-6 h-6 text-indigo-600 animate-bounce" />
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center text-center"
+        style={{
+          background: 'rgba(255, 255, 255, 0.98)',
+          border: '2px dashed var(--color-accent)',
+          padding: '32px'
+        }}>
+          <div style={{
+            width: '56px',
+            height: '56px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'var(--color-accent-subtle)',
+            border: '1px solid var(--color-accent)',
+            borderRadius: 'var(--radius-md)',
+            marginBottom: '12px'
+          }}>
+            <Upload className="w-6 h-6" style={{ color: 'var(--color-accent)' }} />
           </div>
-          <p className="text-sm font-semibold text-zinc-900">
+          <p style={{
+            fontSize: '15px',
+            fontWeight: 'var(--font-weight-medium)',
+            color: 'var(--color-text-primary)',
+            marginBottom: '4px'
+          }}>
             Drop document to inspect
           </p>
-          <p className="text-xs text-zinc-500 mt-1">
-            PDF &bull; Excel &bull; Word &bull; CSV &bull; TXT
+          <p style={{
+            fontSize: '13px',
+            fontWeight: 'var(--font-weight-regular)',
+            color: 'var(--color-text-tertiary)'
+          }}>
+            PDF, Excel, Word, CSV, TXT
           </p>
         </div>
       )}
 
       {/* TOP HEADER BAR */}
-      <div className="shrink-0 px-4 py-3 border-b border-zinc-200 bg-white flex items-center justify-between">
+      <div className="shrink-0 px-4 h-12 flex items-center justify-between" style={{
+        borderBottom: '1px solid var(--color-border)',
+        background: 'var(--color-bg)'
+      }}>
         <div className="flex items-center gap-2.5">
-          <div className="w-6 h-6 rounded-md bg-zinc-100 border border-zinc-200 flex items-center justify-center text-zinc-700">
+          <div style={{
+            width: '24px',
+            height: '24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'var(--color-surface)',
+            border: '1px solid var(--color-border)',
+            borderRadius: 'var(--radius-sm)'
+          }}>
             {previewType === "pdf" ? (
-              <FileText className="w-3.5 h-3.5 text-red-600" />
+              <FileText className="w-3.5 h-3.5" style={{ color: 'var(--color-danger)' }} />
             ) : previewType === "xlsx" ? (
-              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+              <FileSpreadsheet className="w-3.5 h-3.5" style={{ color: 'var(--color-success)' }} />
             ) : previewType === "csv" ? (
-              <FileSpreadsheet className="w-3.5 h-3.5 text-blue-600" />
+              <FileSpreadsheet className="w-3.5 h-3.5" style={{ color: 'var(--color-accent)' }} />
             ) : previewType === "docx" ? (
-              <File className="w-3.5 h-3.5 text-indigo-600" />
+              <File className="w-3.5 h-3.5" style={{ color: 'var(--color-accent)' }} />
             ) : (
-              <FileCode className="w-3.5 h-3.5 text-zinc-600" />
+              <FileCode className="w-3.5 h-3.5" style={{ color: 'var(--color-text-tertiary)' }} />
             )}
           </div>
-          <span className="text-xs font-semibold text-zinc-800 tracking-tight">
-            DOCUMENT_INSPECTOR
+          <span style={{
+            fontSize: '13px',
+            fontWeight: 'var(--font-weight-medium)',
+            color: 'var(--color-text-primary)',
+            letterSpacing: '-0.006em'
+          }}>
+            Document Inspector
           </span>
           {(activeFile || uploadedFileMeta) && !unsupportedFile && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-600 border border-zinc-200 uppercase font-medium">
+            <span style={{
+              fontSize: '11px',
+              padding: '2px 6px',
+              borderRadius: 'var(--radius-sm)',
+              background: 'var(--color-surface)',
+              color: 'var(--color-text-tertiary)',
+              border: '1px solid var(--color-border)',
+              textTransform: 'uppercase',
+              fontWeight: 'var(--font-weight-medium)',
+              letterSpacing: '0.02em'
+            }}>
               {previewType}
             </span>
           )}
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           {(activeFile || uploadedFileMeta || unsupportedFile) && (
             <>
               {(activeFile || uploadedFileMeta) && (
                 <button
                   onClick={() => setIsFullscreen(!isFullscreen)}
-                  className="p-1.5 rounded-md hover:bg-zinc-100 text-zinc-500 hover:text-zinc-800 transition-colors"
+                  style={{
+                    padding: '6px',
+                    borderRadius: 'var(--radius-sm)',
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--color-text-tertiary)',
+                    cursor: 'pointer',
+                    transition: 'all 120ms ease-out'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = 'var(--color-surface)';
+                    e.currentTarget.style.color = 'var(--color-text-primary)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.color = 'var(--color-text-tertiary)';
+                  }}
                   title={isFullscreen ? "Exit Fullscreen" : "Expand Fullscreen"}
                 >
                   {isFullscreen ? (
@@ -655,7 +726,23 @@ export function DocumentUploadPanel({
 
               <button
                 onClick={handleClear}
-                className="p-1.5 rounded-md hover:bg-red-50 text-zinc-500 hover:text-red-600 transition-colors"
+                style={{
+                  padding: '6px',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--color-text-tertiary)',
+                  cursor: 'pointer',
+                  transition: 'all 120ms ease-out'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = 'var(--color-surface)';
+                  e.currentTarget.style.color = 'var(--color-danger)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = 'var(--color-text-tertiary)';
+                }}
                 title="Remove document"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -663,7 +750,20 @@ export function DocumentUploadPanel({
 
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="px-2.5 py-1 rounded-md bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 text-zinc-700 text-xs font-medium transition-all"
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'transparent',
+                  border: '1px solid var(--color-border)',
+                  color: 'var(--color-text-primary)',
+                  fontSize: '13px',
+                  fontWeight: 'var(--font-weight-medium)',
+                  cursor: 'pointer',
+                  transition: 'all 120ms ease-out',
+                  letterSpacing: '-0.006em'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.background = 'var(--color-surface)'}
+                onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
               >
                 Choose File
               </button>
@@ -674,74 +774,168 @@ export function DocumentUploadPanel({
 
       {/* ERROR BANNER */}
       {errorMessage && (
-        <div className="shrink-0 px-4 py-2 bg-red-50 border-b border-red-200 text-red-700 text-xs flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
+        <div className="shrink-0 px-4 py-2 flex items-center gap-2" style={{
+          background: '#fef2f2',
+          borderBottom: '1px solid #fecaca',
+          color: 'var(--color-danger)',
+          fontSize: '13px'
+        }}>
+          <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{errorMessage}</span>
         </div>
       )}
 
-      {/* DYNAMIC CONTENT CONTAINER: STRICTLY CONSTRAINED */}
+      {/* DYNAMIC CONTENT CONTAINER */}
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden relative">
         {/* =================================================================== */}
-        {/* STATE 1: DELIGHTFUL UNSUPPORTED FORMAT ERROR CARD                   */}
+        {/* STATE 1: UNSUPPORTED FORMAT ERROR */}
         {/* =================================================================== */}
         {unsupportedFile && (
-          <div className="flex-1 min-h-0 p-6 sm:p-8 flex flex-col items-center justify-center text-center bg-zinc-50/70 overflow-y-auto">
-            <div className="w-full max-w-md bg-white rounded-2xl border border-rose-200/80 p-6 sm:p-8 shadow-sm flex flex-col items-center">
-              <div className="w-14 h-14 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-500 mb-4 shadow-sm">
-                <FileWarning className="w-7 h-7" />
+          <div className="flex-1 min-h-0 p-8 flex flex-col items-center justify-center text-center overflow-y-auto" style={{
+            background: 'var(--color-surface)'
+          }}>
+            <div className="w-full max-w-md rounded-lg p-8 flex flex-col items-center" style={{
+              background: 'var(--color-bg)',
+              border: '1px solid var(--color-border)'
+            }}>
+              <div style={{
+                width: '56px',
+                height: '56px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: '#fef2f2',
+                border: '1px solid #fecaca',
+                borderRadius: 'var(--radius-lg)',
+                marginBottom: '16px'
+              }}>
+                <FileWarning className="w-7 h-7" style={{ color: 'var(--color-danger)' }} />
               </div>
 
-              <h3 className="text-base font-bold text-zinc-900 mb-1.5">
+              <h3 style={{
+                fontSize: '16px',
+                fontWeight: 'var(--font-weight-medium)',
+                color: 'var(--color-text-primary)',
+                marginBottom: '8px'
+              }}>
                 Unsupported Document Format
               </h3>
 
-              <p className="text-xs text-zinc-600 leading-relaxed mb-4">
+              <p style={{
+                fontSize: '13px',
+                fontWeight: 'var(--font-weight-regular)',
+                color: 'var(--color-text-secondary)',
+                lineHeight: '1.5',
+                marginBottom: '16px'
+              }}>
                 You uploaded{" "}
-                <span className="font-mono font-medium text-zinc-900 bg-zinc-100 px-1.5 py-0.5 rounded">
+                <span style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontWeight: 'var(--font-weight-medium)',
+                  color: 'var(--color-text-primary)',
+                  background: 'var(--color-surface)',
+                  padding: '2px 6px',
+                  borderRadius: 'var(--radius-sm)'
+                }}>
                   {unsupportedFile.name}
                 </span>
-                . DocStruct is designed exclusively for structured enterprise
-                documents.
+                . MESH supports specific enterprise document formats.
               </p>
 
-              {/* Delightful accepted formats badge matrix */}
-              <div className="w-full bg-zinc-50/80 rounded-xl border border-zinc-200/80 p-3.5 mb-5 text-left">
-                <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider font-mono mb-2">
-                  Supported Document Formats
+              {/* Supported formats */}
+              <div style={{
+                width: '100%',
+                background: 'var(--color-surface)',
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--color-border)',
+                padding: '12px',
+                marginBottom: '20px',
+                textAlign: 'left'
+              }}>
+                <p style={{
+                  fontSize: '11px',
+                  fontWeight: 'var(--font-weight-medium)',
+                  color: 'var(--color-text-tertiary)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  marginBottom: '8px'
+                }}>
+                  Supported Formats
                 </p>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="flex items-center gap-1.5 text-zinc-700 bg-white p-1.5 rounded border border-zinc-200/70">
-                    <span className="w-2 h-2 rounded-full bg-red-500" />
-                    <span>PDF (.pdf)</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-zinc-700 bg-white p-1.5 rounded border border-zinc-200/70">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                    <span>Excel (.xlsx, .xls)</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-zinc-700 bg-white p-1.5 rounded border border-zinc-200/70">
-                    <span className="w-2 h-2 rounded-full bg-blue-500" />
-                    <span>Word (.docx, .doc)</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-zinc-700 bg-white p-1.5 rounded border border-zinc-200/70">
-                    <span className="w-2 h-2 rounded-full bg-indigo-500" />
-                    <span>CSV & Text (.csv, .txt)</span>
-                  </div>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(2, 1fr)',
+                  gap: '6px',
+                  fontSize: '13px'
+                }}>
+                  {['PDF', 'Excel (XLSX, XLS)', 'Word (DOCX, DOC)', 'CSV & Text'].map((format) => (
+                    <div key={format} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      color: 'var(--color-text-secondary)',
+                      background: 'var(--color-bg)',
+                      padding: '6px 8px',
+                      borderRadius: 'var(--radius-sm)',
+                      border: '1px solid var(--color-border-subtle)'
+                    }}>
+                      <span style={{
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        background: 'var(--color-accent)'
+                      }} />
+                      <span>{format}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-2.5 w-full">
+              <div className="flex items-center gap-2 w-full">
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex-1 py-2 px-3 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium transition-all shadow-sm flex items-center justify-center gap-1.5"
+                  style={{
+                    flex: 1,
+                    height: '32px',
+                    padding: '0 16px',
+                    fontSize: '13px',
+                    fontWeight: 'var(--font-weight-medium)',
+                    color: 'white',
+                    background: 'var(--color-accent)',
+                    border: 'none',
+                    borderRadius: 'var(--radius-md)',
+                    cursor: 'pointer',
+                    transition: 'background 120ms ease-out',
+                    letterSpacing: '-0.006em',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.background = 'var(--color-accent-hover)'}
+                  onMouseOut={(e) => e.currentTarget.style.background = 'var(--color-accent)'}
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
                   Choose Supported File
                 </button>
                 <button
                   onClick={handleClear}
-                  className="py-2 px-3 rounded-lg border border-zinc-200 hover:bg-zinc-100 text-zinc-600 text-xs font-medium transition-colors"
+                  style={{
+                    height: '32px',
+                    padding: '0 16px',
+                    fontSize: '13px',
+                    fontWeight: 'var(--font-weight-medium)',
+                    color: 'var(--color-text-primary)',
+                    background: 'transparent',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-md)',
+                    cursor: 'pointer',
+                    transition: 'all 120ms ease-out',
+                    letterSpacing: '-0.006em'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.background = 'var(--color-surface)'}
+                  onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
                 >
                   Dismiss
                 </button>
@@ -751,106 +945,157 @@ export function DocumentUploadPanel({
         )}
 
         {/* =================================================================== */}
-        {/* STATE 2: FULL WIDTH & FULL HEIGHT SKELETON LOADER                    */}
+        {/* STATE 2: SKELETON LOADER */}
         {/* =================================================================== */}
         {isUploading && !unsupportedFile && (
-          <div className="flex-1 min-h-0 w-full h-full p-5 sm:p-7 flex flex-col justify-between overflow-hidden bg-white">
+          <div className="flex-1 min-h-0 w-full h-full p-6 flex flex-col justify-between overflow-hidden" style={{
+            background: 'var(--color-bg)'
+          }}>
             <div className="w-full flex-1 flex flex-col justify-between space-y-6">
               {/* Document Title & Status Skeleton */}
-              <div className="flex items-center justify-between pb-5 border-b border-zinc-100 shrink-0">
+              <div className="flex items-center justify-between pb-5 shrink-0" style={{
+                borderBottom: '1px solid var(--color-border-subtle)'
+              }}>
                 <div className="space-y-2">
-                  <div className="h-6 w-60 bg-zinc-200/90 rounded-md animate-pulse" />
-                  <div className="h-3.5 w-36 bg-zinc-100 rounded animate-pulse" />
+                  <div className="skeleton h-6 w-60 rounded-md" />
+                  <div className="skeleton h-3.5 w-36 rounded" />
                 </div>
-                <div className="h-8 w-24 bg-zinc-100 rounded-lg animate-pulse" />
+                <div className="skeleton h-8 w-24 rounded-lg" />
               </div>
 
               {/* Paragraph Skeleton Lines */}
               <div className="space-y-3 shrink-0">
-                <div className="h-3.5 bg-zinc-100 rounded w-full animate-pulse" />
-                <div className="h-3.5 bg-zinc-100 rounded w-11/12 animate-pulse" />
-                <div className="h-3.5 bg-zinc-100 rounded w-4/5 animate-pulse" />
-                <div className="h-3.5 bg-zinc-100 rounded w-2/3 animate-pulse" />
+                <div className="skeleton h-3.5 rounded w-full" />
+                <div className="skeleton h-3.5 rounded w-11/12" />
+                <div className="skeleton h-3.5 rounded w-4/5" />
+                <div className="skeleton h-3.5 rounded w-2/3" />
               </div>
 
-              {/* Full Width High-Density Table Skeleton */}
-              <div className="flex-1 min-h-0 border border-zinc-200/80 rounded-xl overflow-hidden p-3 bg-zinc-50/50 flex flex-col justify-between space-y-2.5">
-                <div className="grid grid-cols-5 gap-3 pb-3 border-b border-zinc-200/80">
-                  <div className="h-3.5 bg-zinc-200 rounded animate-pulse" />
-                  <div className="h-3.5 bg-zinc-200 rounded animate-pulse" />
-                  <div className="h-3.5 bg-zinc-200 rounded animate-pulse" />
-                  <div className="h-3.5 bg-zinc-200 rounded animate-pulse" />
-                  <div className="h-3.5 bg-zinc-200 rounded animate-pulse" />
+              {/* Table Skeleton */}
+              <div className="flex-1 min-h-0 rounded-lg overflow-hidden p-3 flex flex-col justify-between space-y-2.5" style={{
+                border: '1px solid var(--color-border)',
+                background: 'var(--color-surface)'
+              }}>
+                <div className="grid grid-cols-5 gap-3 pb-3" style={{
+                  borderBottom: '1px solid var(--color-border)'
+                }}>
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="skeleton h-3.5 rounded" />
+                  ))}
                 </div>
-                {Array.from({ length: 7 }).map((_, i) => (
+                {[...Array(7)].map((_, i) => (
                   <div key={i} className="grid grid-cols-5 gap-3 py-1.5">
-                    <div className="h-3 bg-zinc-100 rounded animate-pulse" />
-                    <div className="h-3 bg-zinc-100 rounded animate-pulse" />
-                    <div className="h-3 bg-zinc-100 rounded animate-pulse" />
-                    <div className="h-3 bg-zinc-100 rounded animate-pulse" />
-                    <div className="h-3 bg-zinc-100 rounded animate-pulse" />
+                    {[...Array(5)].map((_, j) => (
+                      <div key={j} className="skeleton h-3 rounded" />
+                    ))}
                   </div>
                 ))}
               </div>
 
               {/* Bottom Paragraph Lines */}
-              <div className="space-y-2.5 shrink-0 pt-2 border-t border-zinc-100">
-                <div className="h-3.5 bg-zinc-100 rounded w-5/6 animate-pulse" />
-                <div className="h-3.5 bg-zinc-100 rounded w-1/2 animate-pulse" />
+              <div className="space-y-2.5 shrink-0 pt-2" style={{
+                borderTop: '1px solid var(--color-border-subtle)'
+              }}>
+                <div className="skeleton h-3.5 rounded w-5/6" />
+                <div className="skeleton h-3.5 rounded w-1/2" />
               </div>
             </div>
           </div>
         )}
 
         {/* =================================================================== */}
-        {/* STATE 3: EMPTY DROPZONE STATE (LIGHT THEME)                          */}
+        {/* STATE 3: EMPTY DROPZONE STATE */}
         {/* =================================================================== */}
         {!isUploading && !activeFile && !uploadedFileMeta && !unsupportedFile && (
           <div
             onClick={() => fileInputRef.current?.click()}
-            className="flex-1 p-6 sm:p-8 flex flex-col items-center justify-center text-center cursor-pointer group hover:bg-white transition-colors"
+            className="flex-1 p-8 flex flex-col items-center justify-center text-center cursor-pointer group transition-colors"
+            style={{ background: 'var(--color-surface)' }}
+            onMouseOver={(e) => e.currentTarget.style.background = 'var(--color-bg)'}
+            onMouseOut={(e) => e.currentTarget.style.background = 'var(--color-surface)'}
           >
-            <div className="w-14 h-14 rounded-xl bg-white border border-zinc-200 group-hover:border-zinc-300 group-hover:shadow-md flex items-center justify-center text-zinc-600 group-hover:text-zinc-900 transition-all shadow-sm mb-4">
-              <Upload className="w-6 h-6 text-zinc-500 group-hover:text-indigo-600 transition-colors" />
+            <div style={{
+              width: '56px',
+              height: '56px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'var(--color-bg)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-md)',
+              marginBottom: '16px',
+              transition: 'all 120ms ease-out'
+            }}
+            className="group-hover:border-[var(--color-border-strong)]">
+              <Upload className="w-6 h-6" style={{ 
+                color: 'var(--color-text-tertiary)',
+                transition: 'color 120ms ease-out'
+              }} />
             </div>
 
-            <h3 className="text-sm font-semibold text-zinc-900 mb-1.5">
+            <h3 style={{
+              fontSize: '15px',
+              fontWeight: 'var(--font-weight-medium)',
+              color: 'var(--color-text-primary)',
+              marginBottom: '6px'
+            }}>
               Upload or drag document here
             </h3>
-            <p className="text-xs text-zinc-500 max-w-[280px] leading-relaxed mb-6">
-              Drop PDF, Excel (.xlsx, .xls), Word (.docx, .doc), CSV, or raw
-              text to inspect and parse schema.
+            <p style={{
+              fontSize: '13px',
+              fontWeight: 'var(--font-weight-regular)',
+              color: 'var(--color-text-secondary)',
+              maxWidth: '280px',
+              lineHeight: '1.5',
+              marginBottom: '24px'
+            }}>
+              Drop PDF, Excel, Word, CSV, or text files to inspect and parse.
             </p>
 
             <button
               type="button"
-              className="px-4 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium transition-all shadow-sm flex items-center gap-2"
+              style={{
+                padding: '6px 14px',
+                borderRadius: 'var(--radius-md)',
+                background: 'var(--color-accent)',
+                border: 'none',
+                color: 'white',
+                fontSize: '13px',
+                fontWeight: 'var(--font-weight-medium)',
+                cursor: 'pointer',
+                transition: 'background 120ms ease-out',
+                letterSpacing: '-0.006em',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.background = 'var(--color-accent-hover)'}
+              onMouseOut={(e) => e.currentTarget.style.background = 'var(--color-accent)'}
             >
               <Upload className="w-3.5 h-3.5" />
               Browse Files
             </button>
 
             {/* Supported Format Badges */}
-            <div className="mt-8 pt-6 border-t border-zinc-200/80 flex items-center gap-2 flex-wrap justify-center font-mono text-[11px] text-zinc-400">
-              <span className="px-2 py-0.5 rounded bg-zinc-100 border border-zinc-200 text-zinc-600 font-medium">
-                PDF
-              </span>
-              <span>&bull;</span>
-              <span className="px-2 py-0.5 rounded bg-zinc-100 border border-zinc-200 text-zinc-600 font-medium">
-                XLSX / XLS
-              </span>
-              <span>&bull;</span>
-              <span className="px-2 py-0.5 rounded bg-zinc-100 border border-zinc-200 text-zinc-600 font-medium">
-                DOCX / DOC
-              </span>
-              <span>&bull;</span>
-              <span className="px-2 py-0.5 rounded bg-zinc-100 border border-zinc-200 text-zinc-600 font-medium">
-                CSV
-              </span>
-              <span>&bull;</span>
-              <span className="px-2 py-0.5 rounded bg-zinc-100 border border-zinc-200 text-zinc-600 font-medium">
-                TXT
-              </span>
+            <div className="mt-8 pt-6 flex items-center gap-2 flex-wrap justify-center" style={{
+              borderTop: '1px solid var(--color-border-subtle)',
+              fontSize: '11px',
+              color: 'var(--color-text-tertiary)'
+            }}>
+              {['PDF', 'XLSX', 'DOCX', 'CSV', 'TXT'].map((format, idx) => (
+                <React.Fragment key={format}>
+                  <span style={{
+                    padding: '3px 8px',
+                    borderRadius: 'var(--radius-sm)',
+                    background: 'var(--color-bg)',
+                    border: '1px solid var(--color-border)',
+                    fontWeight: 'var(--font-weight-medium)'
+                  }}>
+                    {format}
+                  </span>
+                  {idx < 4 && <span>·</span>}
+                </React.Fragment>
+              ))}
             </div>
           </div>
         )}
@@ -859,8 +1104,10 @@ export function DocumentUploadPanel({
         {/* STATE 4: PREVIEW RENDERERS                                          */}
         {/* =================================================================== */}
         {!isUploading && (activeFile || uploadedFileMeta) && !unsupportedFile && (
-          <div className="flex-1 min-h-0 flex flex-col overflow-hidden p-3 bg-[#f4f5f7]">
-            {/* 4A: PDF PREVIEW (Multi-page continuous scroll, high-DPI retina rendering) */}
+          <div className="flex-1 min-h-0 flex flex-col overflow-hidden p-3" style={{
+            background: 'var(--color-surface)'
+          }}>
+            {/* 4A: PDF PREVIEW */}
             {previewType === "pdf" && (blobUrl || uploadedFileMeta?.fileUrl || uploadedFileMeta?.url) && (
               <PdfCanvasPreview
                 fileUrl={blobUrl || uploadedFileMeta?.fileUrl || uploadedFileMeta?.url!}
@@ -868,53 +1115,113 @@ export function DocumentUploadPanel({
               />
             )}
 
-            {/* 4B: XLSX / EXCEL PREVIEW (Strictly Contained, NO OVERFLOW) */}
+            {/* 4B: XLSX / EXCEL PREVIEW */}
             {previewType === "xlsx" && (
-              <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-white rounded-lg border border-zinc-200 shadow-sm">
+              <div className="flex-1 min-h-0 flex flex-col overflow-hidden rounded-lg" style={{
+                background: 'var(--color-bg)',
+                border: '1px solid var(--color-border)'
+              }}>
                 {/* Excel Formula Bar */}
-                <div className="h-8 px-3 bg-zinc-50 border-b border-zinc-200 flex items-center gap-2 text-xs font-mono shrink-0 select-none">
-                  <span className="text-zinc-600 font-bold text-[11px] px-1.5 py-0.5 bg-white rounded border border-zinc-200">
+                <div className="h-8 px-3 flex items-center gap-2 text-xs font-mono shrink-0 select-none" style={{
+                  background: 'var(--color-surface)',
+                  borderBottom: '1px solid var(--color-border)'
+                }}>
+                  <span style={{
+                    fontSize: '11px',
+                    padding: '2px 6px',
+                    background: 'var(--color-bg)',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--color-border)',
+                    fontWeight: 'var(--font-weight-medium)',
+                    color: 'var(--color-text-primary)'
+                  }}>
                     {selectedCell
                       ? `${getColLetter(selectedCell.col)}${selectedCell.row + 1}`
                       : "A1"}
                   </span>
-                  <span className="text-zinc-400 font-sans font-semibold">
+                  <span style={{
+                    fontFamily: 'var(--font-sans)',
+                    fontWeight: 'var(--font-weight-medium)',
+                    color: 'var(--color-text-tertiary)'
+                  }}>
                     fx
                   </span>
-                  <div className="flex-1 px-2 py-0.5 bg-white border border-zinc-200 rounded text-zinc-800 text-[11px] truncate">
+                  <div style={{
+                    flex: 1,
+                    padding: '2px 8px',
+                    background: 'var(--color-bg)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '11px',
+                    color: 'var(--color-text-primary)',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}>
                     {selectedCell?.val ?? ""}
                   </div>
                 </div>
 
-                {/* Spreadsheet Grid - STRICTLY CONSTRAINED SCROLL CONTAINER */}
+                {/* Spreadsheet Grid */}
                 <div className="flex-1 min-h-0 overflow-auto font-mono text-xs">
                   {currentSheet && (
                     <table className="w-full border-collapse">
-                      <thead className="sticky top-0 bg-zinc-100 z-10 select-none border-b border-zinc-200">
+                      <thead className="sticky top-0 z-10 select-none" style={{
+                        background: 'var(--color-surface)',
+                        borderBottom: '1px solid var(--color-border)'
+                      }}>
                         <tr>
-                          <th className="w-10 px-2 py-1.5 border border-zinc-200 text-[10px] text-zinc-500 bg-zinc-100 font-medium">
+                          <th style={{
+                            width: '40px',
+                            padding: '6px 8px',
+                            border: '1px solid var(--color-border)',
+                            fontSize: '10px',
+                            color: 'var(--color-text-tertiary)',
+                            background: 'var(--color-surface)',
+                            fontWeight: 'var(--font-weight-medium)'
+                          }}>
                             #
                           </th>
                           {currentSheet.data[0]?.map((_, colIdx) => (
                             <th
                               key={colIdx}
-                              className="px-3 py-1.5 border border-zinc-200 text-[10px] text-zinc-600 font-semibold text-center min-w-[90px] bg-zinc-100"
+                              style={{
+                                padding: '6px 12px',
+                                border: '1px solid var(--color-border)',
+                                fontSize: '10px',
+                                color: 'var(--color-text-secondary)',
+                                fontWeight: 'var(--font-weight-medium)',
+                                textAlign: 'center',
+                                minWidth: '90px',
+                                background: 'var(--color-surface)'
+                              }}
                             >
                               {getColLetter(colIdx)}
                             </th>
                           ))}
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-zinc-200">
+                      <tbody>
                         {paginatedXlsxRows.map((row, rOffset) => {
-                          const rowIdx =
-                            xlsxPage * XLSX_ROWS_PER_PAGE + rOffset;
+                          const rowIdx = xlsxPage * XLSX_ROWS_PER_PAGE + rOffset;
                           return (
                             <tr
                               key={rowIdx}
-                              className="hover:bg-zinc-50 transition-colors"
+                              style={{
+                                transition: 'background 120ms ease-out'
+                              }}
+                              onMouseOver={(e) => e.currentTarget.style.background = 'var(--color-surface)'}
+                              onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
                             >
-                              <td className="px-2 py-1 border border-zinc-200 text-[10px] text-zinc-400 text-center bg-zinc-50/80 select-none font-mono">
+                              <td style={{
+                                padding: '4px 8px',
+                                border: '1px solid var(--color-border)',
+                                fontSize: '10px',
+                                color: 'var(--color-text-tertiary)',
+                                textAlign: 'center',
+                                background: 'var(--color-surface)',
+                                fontFamily: 'var(--font-mono)'
+                              }}>
                                 {rowIdx + 1}
                               </td>
                               {row.map((cell, colIdx) => {
@@ -932,11 +1239,31 @@ export function DocumentUploadPanel({
                                       })
                                     }
                                     title={String(cell ?? "")}
-                                    className={`px-2.5 py-1.5 border border-zinc-200 text-[11px] truncate max-w-[180px] cursor-cell transition-all ${
-                                      isSelected
-                                        ? "bg-indigo-50 text-indigo-900 ring-1 ring-inset ring-indigo-500 font-medium"
-                                        : "text-zinc-700 hover:bg-zinc-50"
-                                    }`}
+                                    style={{
+                                      padding: '6px 10px',
+                                      border: '1px solid var(--color-border)',
+                                      fontSize: '11px',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'nowrap',
+                                      maxWidth: '180px',
+                                      cursor: 'cell',
+                                      transition: 'all 120ms ease-out',
+                                      ...(isSelected ? {
+                                        background: 'var(--color-accent-subtle)',
+                                        color: 'var(--color-accent)',
+                                        fontWeight: 'var(--font-weight-medium)',
+                                        outline: '1px solid var(--color-accent)'
+                                      } : {
+                                        color: 'var(--color-text-secondary)'
+                                      })
+                                    }}
+                                    onMouseOver={(e) => {
+                                      if (!isSelected) e.currentTarget.style.background = 'var(--color-surface)';
+                                    }}
+                                    onMouseOut={(e) => {
+                                      if (!isSelected) e.currentTarget.style.background = 'transparent';
+                                    }}
                                   >
                                     {String(cell ?? "")}
                                   </td>
@@ -951,7 +1278,10 @@ export function DocumentUploadPanel({
                 </div>
 
                 {/* Bottom Bar: Sheet Tabs & Pagination */}
-                <div className="shrink-0 h-9 px-2 bg-zinc-50 border-t border-zinc-200 flex items-center justify-between gap-2 overflow-x-auto text-xs font-mono select-none">
+                <div className="shrink-0 h-9 px-2 flex items-center justify-between gap-2 overflow-x-auto text-xs font-mono select-none" style={{
+                  background: 'var(--color-surface)',
+                  borderTop: '1px solid var(--color-border)'
+                }}>
                   <div className="flex items-center gap-1">
                     {sheets.map((sheet, idx) => (
                       <button
@@ -960,24 +1290,61 @@ export function DocumentUploadPanel({
                           setActiveSheetIndex(idx);
                           setXlsxPage(0);
                         }}
-                        className={`px-2.5 py-1 rounded text-[11px] font-medium transition-colors ${
-                          activeSheetIndex === idx
-                            ? "bg-white text-indigo-600 border border-zinc-200 shadow-sm"
-                            : "text-zinc-600 hover:text-zinc-900"
-                        }`}
+                        style={{
+                          padding: '4px 10px',
+                          borderRadius: 'var(--radius-sm)',
+                          fontSize: '11px',
+                          fontWeight: 'var(--font-weight-medium)',
+                          transition: 'all 120ms ease-out',
+                          ...(activeSheetIndex === idx ? {
+                            background: 'var(--color-bg)',
+                            color: 'var(--color-accent)',
+                            border: '1px solid var(--color-border)'
+                          } : {
+                            color: 'var(--color-text-secondary)',
+                            border: '1px solid transparent'
+                          })
+                        }}
+                        onMouseOver={(e) => {
+                          if (activeSheetIndex !== idx) {
+                            e.currentTarget.style.color = 'var(--color-text-primary)';
+                          }
+                        }}
+                        onMouseOut={(e) => {
+                          if (activeSheetIndex !== idx) {
+                            e.currentTarget.style.color = 'var(--color-text-secondary)';
+                          }
+                        }}
                       >
                         {sheet.name}
                       </button>
                     ))}
                   </div>
 
-                  <div className="flex items-center gap-2 text-[11px] text-zinc-500 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0" style={{
+                    fontSize: '11px',
+                    color: 'var(--color-text-tertiary)'
+                  }}>
                     {totalXlsxRows > XLSX_ROWS_PER_PAGE && (
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => setXlsxPage((p) => Math.max(0, p - 1))}
                           disabled={xlsxPage === 0}
-                          className="p-1 rounded hover:bg-zinc-200 disabled:opacity-30"
+                          style={{
+                            padding: '4px',
+                            borderRadius: 'var(--radius-sm)',
+                            background: 'transparent',
+                            border: 'none',
+                            cursor: xlsxPage === 0 ? 'not-allowed' : 'pointer',
+                            opacity: xlsxPage === 0 ? 0.3 : 1,
+                            transition: 'all 120ms ease-out'
+                          }}
+                          onMouseOver={(e) => {
+                            if (xlsxPage !== 0) e.currentTarget.style.background = 'var(--color-bg)';
+                          }}
+                          onMouseOut={(e) => {
+                            if (xlsxPage !== 0) e.currentTarget.style.background = 'transparent';
+                          }}
                           title="Previous rows"
                         >
                           <ChevronLeft className="w-3.5 h-3.5" />
@@ -1001,7 +1368,25 @@ export function DocumentUploadPanel({
                           disabled={
                             (xlsxPage + 1) * XLSX_ROWS_PER_PAGE >= totalXlsxRows
                           }
-                          className="p-1 rounded hover:bg-zinc-200 disabled:opacity-30"
+                          style={{
+                            padding: '4px',
+                            borderRadius: 'var(--radius-sm)',
+                            background: 'transparent',
+                            border: 'none',
+                            cursor: (xlsxPage + 1) * XLSX_ROWS_PER_PAGE >= totalXlsxRows ? 'not-allowed' : 'pointer',
+                            opacity: (xlsxPage + 1) * XLSX_ROWS_PER_PAGE >= totalXlsxRows ? 0.3 : 1,
+                            transition: 'all 120ms ease-out'
+                          }}
+                          onMouseOver={(e) => {
+                            if ((xlsxPage + 1) * XLSX_ROWS_PER_PAGE < totalXlsxRows) {
+                              e.currentTarget.style.background = 'var(--color-bg)';
+                            }
+                          }}
+                          onMouseOut={(e) => {
+                            if ((xlsxPage + 1) * XLSX_ROWS_PER_PAGE < totalXlsxRows) {
+                              e.currentTarget.style.background = 'transparent';
+                            }
+                          }}
                           title="Next rows"
                         >
                           <ChevronRight className="w-3.5 h-3.5" />
@@ -1162,23 +1547,40 @@ export function DocumentUploadPanel({
         )}
       </div>
 
-      {/* BOTTOM STATUS BAR (LIGHT THEME) */}
-      <div className="shrink-0 px-4 py-2.5 bg-white border-t border-zinc-200 flex items-center justify-between text-[11px] font-mono text-zinc-500">
+      {/* BOTTOM STATUS BAR - Premium minimal */}
+      <div className="shrink-0 px-4 h-10 flex items-center justify-between" style={{
+        borderTop: '1px solid var(--color-border)',
+        background: 'var(--color-bg)',
+        fontSize: '11px',
+        fontFamily: 'var(--font-mono)',
+        color: 'var(--color-text-tertiary)'
+      }}>
         <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-500" />
-          <span>PARSER_ENGINE: ONLINE</span>
+          <span style={{
+            width: '6px',
+            height: '6px',
+            borderRadius: '50%',
+            background: 'var(--color-success)'
+          }} />
+          <span>Parser Online</span>
         </div>
 
         <div className="flex items-center gap-3">
           {uploadedFileMeta?.id && (
             <span className="text-zinc-400 hidden sm:inline">
-              REF: {uploadedFileMeta.id}
+              {uploadedFileMeta.id}
             </span>
           )}
-          {activeFile && <span>SIZE: {formatFileSize(activeFile.size)}</span>}
-          <span className="text-zinc-700 font-medium flex items-center gap-1">
-            READY
-            <ChevronRight className="w-3 h-3 text-zinc-400" />
+          {activeFile && <span>{formatFileSize(activeFile.size)}</span>}
+          <span style={{
+            color: 'var(--color-text-primary)',
+            fontWeight: 'var(--font-weight-medium)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px'
+          }}>
+            Ready
+            <ChevronRight className="w-3 h-3" />
           </span>
         </div>
       </div>

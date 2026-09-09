@@ -18,7 +18,6 @@ import { extractText } from "./text-extractor";
 import { induceSchema } from "./schema-inducer";
 import { extractGroundedFields } from "./extractor";
 import { summarizeTabularData } from "./tabular-summary";
-import { withRetry } from "./retry";
 import type { Document, Extraction, Prisma } from "@prisma/client";
 
 const BUCKET_NAME = process.env.SUPABASE_BUCKET_NAME || "MESH";
@@ -113,10 +112,7 @@ export async function processDocument(documentId: string): Promise<{
       };
 
       // Fast, lightweight LLM call to classify category & produce summary
-      const tableSummary = await withRetry(
-        () => summarizeTabularData(tabular.headers, tabular.rows),
-        2
-      );
+      const tableSummary = await summarizeTabularData(tabular.headers, tabular.rows);
 
       category = tableSummary.category;
       summary = tableSummary.summary;
@@ -140,16 +136,13 @@ export async function processDocument(documentId: string): Promise<{
       rawText = text;
 
       // Stage 2: Schema induction (first ~4000 characters)
-      const schema = await withRetry(() => induceSchema(text), 2);
+      const schema = await induceSchema(text);
 
       category = schema.category;
       summary = schema.summary;
 
       // Stage 3: Grammar-constrained grounded extraction (full text)
-      const extraction = await withRetry(
-        () => extractGroundedFields(text, schema),
-        2
-      );
+      const extraction = await extractGroundedFields(text, schema);
 
       extractedData = extraction.fields as unknown as Prisma.InputJsonValue;
     }

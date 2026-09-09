@@ -1,40 +1,55 @@
-import { SignInButton, SignUpButton } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
-import { ArrowRight, FileText, Sparkles, MessageSquare } from "lucide-react";
+import { FileText } from "lucide-react";
 import Link from "next/link";
+import { CTAButtons, HeaderCTAButtons, FooterLink } from "@/components/landing/cta-buttons";
 
 export default async function Home() {
   const { userId } = await auth();
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-zinc-50 via-white to-zinc-100 dark:from-zinc-950 dark:via-black dark:to-zinc-900">
-      {/* Header */}
-      <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-black/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <FileText className="h-6 w-6 text-zinc-900 dark:text-white" />
-            <span className="text-xl font-semibold text-zinc-900 dark:text-white">
-              DocStruct
+    <div className="flex flex-col min-h-screen" style={{ background: 'var(--color-bg)' }}>
+      {/* Header - Minimal, precise, no decoration */}
+      <header className="sticky top-0 z-50" style={{ 
+        borderBottom: '1px solid var(--color-border)',
+        background: 'var(--color-bg)'
+      }}>
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 h-16 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 flex items-center justify-center" style={{ 
+              background: 'var(--color-surface)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-md)'
+            }}>
+              <FileText className="w-4 h-4" style={{ color: 'var(--color-accent)' }} />
+            </div>
+            <span style={{ 
+              fontSize: '15px',
+              fontWeight: 'var(--font-weight-medium)',
+              color: 'var(--color-text-primary)',
+              letterSpacing: '-0.006em'
+            }}>
+              MESH
             </span>
           </div>
           
           {!userId ? (
-            <div className="flex gap-3">
-              <SignInButton mode="modal">
-                <button className="px-4 py-2 text-sm font-medium text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition-colors">
-                  Sign In
-                </button>
-              </SignInButton>
-              <SignUpButton mode="modal">
-                <button className="px-4 py-2 text-sm font-medium bg-zinc-900 text-white rounded-lg hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100 transition-colors">
-                  Get Started
-                </button>
-              </SignUpButton>
-            </div>
+            <HeaderCTAButtons />
           ) : (
             <Link
               href="/dashboard"
-              className="px-4 py-2 text-sm font-medium bg-zinc-900 text-white rounded-lg hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100 transition-colors"
+              style={{
+                padding: '6px 14px',
+                fontSize: '15px',
+                fontWeight: 'var(--font-weight-medium)',
+                color: 'white',
+                background: 'var(--color-accent)',
+                border: 'none',
+                borderRadius: 'var(--radius-md)',
+                textDecoration: 'none',
+                transition: 'background 120ms ease-out',
+                letterSpacing: '-0.006em',
+                display: 'inline-block'
+              }}
             >
               Go to Dashboard
             </Link>
@@ -42,94 +57,177 @@ export default async function Home() {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <main className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
-        <div className="max-w-4xl mx-auto text-center space-y-8">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700">
-            <Sparkles className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
-            <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-              AI-Powered Document Intelligence
-            </span>
+      {/* Hero Section - Left-aligned, clean, single focus */}
+      <main className="flex-1 flex flex-col justify-center px-6 lg:px-8 py-24">
+        <div className="max-w-4xl mx-auto w-full">
+          {/* Hero Content */}
+          <div className="space-y-6 mb-16">
+            <h1 style={{
+              fontSize: '56px',
+              fontWeight: 'var(--font-weight-semibold)',
+              color: 'var(--color-text-primary)',
+              lineHeight: '1.05',
+              letterSpacing: '-0.02em',
+              maxWidth: '700px'
+            }}>
+              Transform documents into structured data
+            </h1>
+
+            <p style={{
+              fontSize: '20px',
+              fontWeight: 'var(--font-weight-regular)',
+              color: 'var(--color-text-secondary)',
+              lineHeight: '1.5',
+              maxWidth: '560px'
+            }}>
+              Upload PDFs, spreadsheets, and documents. Extract structured information with AI and get instant insights.
+            </p>
+
+            {/* CTA Buttons - Primary + Secondary */}
+            {!userId ? (
+              <CTAButtons />
+            ) : (
+              <div className="pt-4">
+                <Link
+                  href="/dashboard"
+                  style={{
+                    height: '36px',
+                    padding: '0 16px',
+                    fontSize: '15px',
+                    fontWeight: 'var(--font-weight-medium)',
+                    color: 'white',
+                    background: 'var(--color-accent)',
+                    border: 'none',
+                    borderRadius: 'var(--radius-md)',
+                    textDecoration: 'none',
+                    transition: 'background 120ms ease-out',
+                    letterSpacing: '-0.006em',
+                    display: 'inline-flex',
+                    alignItems: 'center'
+                  }}
+                >
+                  Go to Dashboard
+                </Link>
+              </div>
+            )}
           </div>
 
-          {/* Heading */}
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-zinc-900 dark:text-white">
-            Transform Your Documents
-            <br />
-            <span className="bg-gradient-to-r from-zinc-600 to-zinc-900 dark:from-zinc-400 dark:to-zinc-100 bg-clip-text text-transparent">
-              Into Structured Data
-            </span>
-          </h1>
-
-          {/* Description */}
-          <p className="text-lg sm:text-xl text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto">
-            Upload PDFs, spreadsheets, and documents. Extract structured information with AI.
-            Chat with your documents to get instant insights.
-          </p>
-
-          {/* CTA Buttons */}
-          {!userId ? (
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
-              <SignUpButton mode="modal">
-                <button className="group px-6 py-3 text-base font-medium bg-zinc-900 text-white rounded-lg hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100 transition-all flex items-center gap-2 shadow-lg hover:shadow-xl">
-                  Start Free Trial
-                  <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </button>
-              </SignUpButton>
-              <button className="px-6 py-3 text-base font-medium text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white border border-zinc-300 dark:border-zinc-700 rounded-lg hover:border-zinc-400 dark:hover:border-zinc-600 transition-colors">
-                Watch Demo
-              </button>
+          {/* Product Screenshot - Real UI preview */}
+          <div style={{
+            border: '1px solid var(--color-border)',
+            borderRadius: 'var(--radius-lg)',
+            overflow: 'hidden',
+            background: 'var(--color-surface)',
+            marginBottom: '96px'
+          }}>
+            <div style={{
+              padding: '48px',
+              background: 'var(--color-bg)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: '400px'
+            }}>
+              <div style={{
+                textAlign: 'center',
+                color: 'var(--color-text-tertiary)',
+                fontSize: '13px',
+                fontWeight: 'var(--font-weight-medium)'
+              }}>
+                <FileText className="w-12 h-12 mx-auto mb-3" style={{ opacity: 0.3 }} />
+                Product Interface Preview
+              </div>
             </div>
-          ) : (
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center gap-2 px-6 py-3 text-base font-medium bg-zinc-900 text-white rounded-lg hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100 transition-all shadow-lg hover:shadow-xl"
-            >
-              Go to Dashboard
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          )}
+          </div>
 
-          {/* Features */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-12 max-w-3xl mx-auto">
-            <div className="p-6 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
-              <FileText className="h-8 w-8 text-zinc-900 dark:text-white mb-3" />
-              <h3 className="font-semibold text-zinc-900 dark:text-white mb-2">
+          {/* Features - Simple three-column grid, no icons glued to labels */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+            gap: '48px',
+            paddingTop: '32px',
+            borderTop: '1px solid var(--color-border-subtle)'
+          }}>
+            <div>
+              <h3 style={{
+                fontSize: '16px',
+                fontWeight: 'var(--font-weight-medium)',
+                color: 'var(--color-text-primary)',
+                marginBottom: '8px',
+                letterSpacing: '-0.006em'
+              }}>
                 Smart Extraction
               </h3>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                Automatically extract key information from any document format
+              <p style={{
+                fontSize: '15px',
+                fontWeight: 'var(--font-weight-regular)',
+                color: 'var(--color-text-secondary)',
+                lineHeight: '1.5'
+              }}>
+                Automatically extract key information from any document format with precision.
               </p>
             </div>
 
-            <div className="p-6 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
-              <Sparkles className="h-8 w-8 text-zinc-900 dark:text-white mb-3" />
-              <h3 className="font-semibold text-zinc-900 dark:text-white mb-2">
+            <div>
+              <h3 style={{
+                fontSize: '16px',
+                fontWeight: 'var(--font-weight-medium)',
+                color: 'var(--color-text-primary)',
+                marginBottom: '8px',
+                letterSpacing: '-0.006em'
+              }}>
                 AI Processing
               </h3>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                Powered by advanced AI to understand context and meaning
+              <p style={{
+                fontSize: '15px',
+                fontWeight: 'var(--font-weight-regular)',
+                color: 'var(--color-text-secondary)',
+                lineHeight: '1.5'
+              }}>
+                Advanced AI models understand context and meaning to deliver accurate results.
               </p>
             </div>
 
-            <div className="p-6 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
-              <MessageSquare className="h-8 w-8 text-zinc-900 dark:text-white mb-3" />
-              <h3 className="font-semibold text-zinc-900 dark:text-white mb-2">
+            <div>
+              <h3 style={{
+                fontSize: '16px',
+                fontWeight: 'var(--font-weight-medium)',
+                color: 'var(--color-text-primary)',
+                marginBottom: '8px',
+                letterSpacing: '-0.006em'
+              }}>
                 Interactive Chat
               </h3>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                Ask questions and get instant answers about your documents
+              <p style={{
+                fontSize: '15px',
+                fontWeight: 'var(--font-weight-regular)',
+                color: 'var(--color-text-secondary)',
+                lineHeight: '1.5'
+              }}>
+                Ask questions and get instant answers about your documents through natural conversation.
               </p>
             </div>
           </div>
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-black/50 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center text-sm text-zinc-600 dark:text-zinc-400">
-          © 2026 DocStruct. All rights reserved.
+      {/* Footer - Minimal hairline */}
+      <footer style={{ 
+        borderTop: '1px solid var(--color-border)',
+        background: 'var(--color-bg)'
+      }}>
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-6 flex items-center justify-between">
+          <span style={{
+            fontSize: '13px',
+            fontWeight: 'var(--font-weight-regular)',
+            color: 'var(--color-text-tertiary)'
+          }}>
+            © 2026 MESH
+          </span>
+          <div className="flex items-center gap-6">
+            <FooterLink>Privacy</FooterLink>
+            <FooterLink>Terms</FooterLink>
+          </div>
         </div>
       </footer>
     </div>

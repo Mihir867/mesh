@@ -7,7 +7,6 @@ import {
   Download,
   Code2,
   Cpu,
-  Database,
   Sparkles,
   FileCode2,
   AlertCircle,
@@ -61,7 +60,6 @@ export function JsonOutputPanel({
       setIsActivelyTyping(true);
       setRenderedLineCount(1);
 
-      // Dynamic pacing: shorter documents stream at ~22ms/line, longer documents at ~8-12ms/line
       const lineIntervalMs = totalLines > 100 ? 8 : totalLines > 40 ? 14 : 22;
 
       let current = 1;
@@ -78,7 +76,6 @@ export function JsonOutputPanel({
 
       return () => clearInterval(interval);
     } else {
-      // Direct render (session restore or instant complete)
       setRenderedLineCount(totalLines);
       setIsActivelyTyping(false);
     }
@@ -109,22 +106,22 @@ export function JsonOutputPanel({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `docstruct_extracted_${Date.now()}.json`;
+    a.download = `mesh_extracted_${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
   const renderValueToken = (valStr: string) => {
     if (valStr.includes('"')) {
-      return <span className="text-emerald-700">{valStr}</span>;
+      return <span style={{ color: 'var(--color-success)' }}>{valStr}</span>;
     }
     if (/\b\d+(\.\d+)?\b/.test(valStr)) {
-      return <span className="text-amber-600 font-medium">{valStr}</span>;
+      return <span style={{ color: 'var(--color-warning)', fontWeight: 'var(--font-weight-medium)' }}>{valStr}</span>;
     }
     if (/\b(true|false|null)\b/.test(valStr)) {
-      return <span className="text-purple-600 font-semibold">{valStr}</span>;
+      return <span style={{ color: 'var(--color-accent)', fontWeight: 'var(--font-weight-medium)' }}>{valStr}</span>;
     }
-    return <span className="text-zinc-700">{valStr}</span>;
+    return <span style={{ color: 'var(--color-text-secondary)' }}>{valStr}</span>;
   };
 
   const renderHighlightedJson = (linesToRender: string[]) => {
@@ -135,26 +132,45 @@ export function JsonOutputPanel({
       return (
         <div
           key={idx}
-          className={`table-row hover:bg-zinc-200/40 group transition-colors ${
-            isLatestLine ? "bg-indigo-50/50" : ""
-          }`}
+          className="table-row group transition-colors"
+          style={{
+            background: isLatestLine ? 'var(--color-accent-subtle)' : 'transparent'
+          }}
+          onMouseOver={(e) => {
+            if (!isLatestLine) e.currentTarget.style.background = 'var(--color-surface)';
+          }}
+          onMouseOut={(e) => {
+            if (!isLatestLine) e.currentTarget.style.background = 'transparent';
+          }}
         >
-          <span className="table-cell select-none pr-4 text-right text-[11px] text-zinc-400 group-hover:text-zinc-600 font-mono w-8">
+          <span className="table-cell select-none pr-4 text-right font-mono w-8" style={{
+            fontSize: '11px',
+            color: 'var(--color-text-tertiary)',
+            transition: 'color 120ms ease-out'
+          }}>
             {idx + 1}
           </span>
-          <span className="table-cell whitespace-pre font-mono text-[13px] leading-6">
+          <span className="table-cell whitespace-pre font-mono" style={{
+            fontSize: '13px',
+            lineHeight: '1.5'
+          }}>
             {keyMatch ? (
               <>
                 <span>{keyMatch[1]}</span>
-                <span className="text-indigo-600 font-medium">{keyMatch[2]}</span>
-                <span className="text-zinc-400">{keyMatch[3]}</span>
+                <span style={{ color: 'var(--color-accent)', fontWeight: 'var(--font-weight-medium)' }}>{keyMatch[2]}</span>
+                <span style={{ color: 'var(--color-text-tertiary)' }}>{keyMatch[3]}</span>
                 {renderValueToken(keyMatch[4])}
               </>
             ) : (
               renderValueToken(line)
             )}
             {isLatestLine && (
-              <span className="inline-block w-1.5 h-3.5 ml-1 bg-indigo-500 animate-pulse align-middle" />
+              <span className="inline-block align-middle animate-pulse" style={{
+                width: '6px',
+                height: '14px',
+                marginLeft: '4px',
+                background: 'var(--color-accent)'
+              }} />
             )}
           </span>
         </div>
@@ -165,61 +181,75 @@ export function JsonOutputPanel({
   const visibleLines = allLines.slice(0, renderedLineCount);
 
   return (
-    <div className="lg:col-span-6 xl:col-span-7 p-5 sm:p-6 lg:p-7 flex flex-col justify-between bg-white text-zinc-900 h-full min-h-0 overflow-hidden font-sans">
+    <div className="lg:col-span-6 xl:col-span-7 p-6 flex flex-col h-full min-h-0 overflow-hidden" style={{
+      background: 'var(--color-bg)'
+    }}>
       {/* Header */}
-      <div className="shrink-0 font-sans">
-        <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-zinc-200">
+      <div className="shrink-0">
+        <div className="flex flex-wrap items-center justify-between gap-4 pb-4" style={{
+          borderBottom: '1px solid var(--color-border)'
+        }}>
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span
-                className={`w-2 h-2 rounded-full ${
-                  isProcessing
-                    ? "bg-amber-400 animate-pulse"
-                    : isActivelyTyping
-                    ? "bg-emerald-500 animate-pulse ring-2 ring-emerald-200"
-                    : jsonData
-                    ? "bg-emerald-500"
-                    : "bg-zinc-300"
-                }`}
-              />
-              <span className="text-[11px] uppercase tracking-wider text-zinc-500 font-medium font-sans">
+              <span style={{
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                background: isProcessing 
+                  ? 'var(--color-warning)' 
+                  : isActivelyTyping || jsonData 
+                  ? 'var(--color-success)' 
+                  : 'var(--color-border-strong)'
+              }} className={isProcessing || isActivelyTyping ? 'animate-pulse' : ''} />
+              <span style={{
+                fontSize: '11px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                color: 'var(--color-text-tertiary)',
+                fontWeight: 'var(--font-weight-medium)'
+              }}>
                 {isProcessing
-                  ? "AI Processing Engine"
+                  ? "Processing"
                   : isActivelyTyping
-                  ? "Streaming Extraction"
+                  ? "Streaming"
                   : jsonData
                   ? "Structured Output"
                   : "Awaiting Document"}
               </span>
             </div>
-            <h2 className="text-base font-semibold tracking-tight text-zinc-900 flex items-center gap-2 font-sans">
-              Structured JSON
-              {isProcessing && (
-                <span className="text-[11px] px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 font-medium font-sans animate-pulse">
-                  Extracting...
-                </span>
-              )}
-              {isActivelyTyping && (
-                <span className="text-[11px] px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium font-sans">
-                  Streaming
-                </span>
-              )}
-              {!isProcessing && !isActivelyTyping && jsonData && (
-                <span className="text-[11px] px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium font-sans">
-                  {category || "Valid JSON"}
-                </span>
-              )}
+            <h2 style={{
+              fontSize: '16px',
+              fontWeight: 'var(--font-weight-medium)',
+              color: 'var(--color-text-primary)',
+              letterSpacing: '-0.006em'
+            }}>
+              {category || "JSON Output"}
             </h2>
           </div>
 
-          <div className="flex items-center gap-2 font-sans">
+          <div className="flex items-center gap-2">
             {isActivelyTyping && (
               <button
                 onClick={handleSkipAnimation}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 transition-colors text-[11px] font-medium font-sans shadow-sm"
-                title="Skip typewriter animation"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 12px',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'var(--color-accent-subtle)',
+                  border: '1px solid var(--color-accent)',
+                  color: 'var(--color-accent)',
+                  fontSize: '13px',
+                  fontWeight: 'var(--font-weight-medium)',
+                  cursor: 'pointer',
+                  transition: 'all 120ms ease-out'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.background = 'var(--color-accent)'}
+                onMouseOut={(e) => e.currentTarget.style.background = 'var(--color-accent-subtle)'}
+                title="Skip animation"
               >
-                <FastForward className="w-3.5 h-3.5 text-indigo-600" />
+                <FastForward className="w-3.5 h-3.5" />
                 <span>Skip</span>
               </button>
             )}
@@ -227,16 +257,36 @@ export function JsonOutputPanel({
             <button
               onClick={handleCopy}
               disabled={!jsonData || isProcessing}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 text-zinc-700 transition-colors text-[11px] font-medium font-sans disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                borderRadius: 'var(--radius-md)',
+                background: 'transparent',
+                border: '1px solid var(--color-border)',
+                color: 'var(--color-text-primary)',
+                fontSize: '13px',
+                fontWeight: 'var(--font-weight-medium)',
+                cursor: !jsonData || isProcessing ? 'not-allowed' : 'pointer',
+                opacity: !jsonData || isProcessing ? 0.4 : 1,
+                transition: 'all 120ms ease-out'
+              }}
+              onMouseOver={(e) => {
+                if (jsonData && !isProcessing) e.currentTarget.style.background = 'var(--color-surface)';
+              }}
+              onMouseOut={(e) => {
+                if (jsonData && !isProcessing) e.currentTarget.style.background = 'transparent';
+              }}
             >
               {copied ? (
                 <>
-                  <Check className="w-3.5 h-3.5 text-emerald-600" />
-                  <span className="text-emerald-700 font-medium">Copied</span>
+                  <Check className="w-3.5 h-3.5" style={{ color: 'var(--color-success)' }} />
+                  <span style={{ color: 'var(--color-success)' }}>Copied</span>
                 </>
               ) : (
                 <>
-                  <Copy className="w-3.5 h-3.5 text-zinc-500" />
+                  <Copy className="w-3.5 h-3.5" />
                   <span>Copy</span>
                 </>
               )}
@@ -245,94 +295,180 @@ export function JsonOutputPanel({
             <button
               onClick={handleDownload}
               disabled={!jsonData || isProcessing}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 text-zinc-700 transition-colors text-[11px] font-medium font-sans disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                borderRadius: 'var(--radius-md)',
+                background: 'transparent',
+                border: '1px solid var(--color-border)',
+                color: 'var(--color-text-primary)',
+                fontSize: '13px',
+                fontWeight: 'var(--font-weight-medium)',
+                cursor: !jsonData || isProcessing ? 'not-allowed' : 'pointer',
+                opacity: !jsonData || isProcessing ? 0.4 : 1,
+                transition: 'all 120ms ease-out'
+              }}
+              onMouseOver={(e) => {
+                if (jsonData && !isProcessing) e.currentTarget.style.background = 'var(--color-surface)';
+              }}
+              onMouseOut={(e) => {
+                if (jsonData && !isProcessing) e.currentTarget.style.background = 'transparent';
+              }}
             >
-              <Download className="w-3.5 h-3.5 text-zinc-500" />
+              <Download className="w-3.5 h-3.5" />
               <span>Export</span>
             </button>
           </div>
         </div>
 
         {/* Code Toolbar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 py-2 text-[11px] text-zinc-500 font-sans">
+        <div className="flex flex-wrap items-center justify-between gap-3 py-2" style={{
+          fontSize: '11px',
+          color: 'var(--color-text-tertiary)'
+        }}>
           <div className="flex items-center gap-2">
-            <span>Lines:</span>
-            <span className="px-1.5 py-0.5 rounded bg-zinc-100 border border-zinc-200 text-zinc-800 font-medium font-sans">
+            <span>Lines</span>
+            <span style={{
+              padding: '2px 6px',
+              borderRadius: 'var(--radius-sm)',
+              background: 'var(--color-surface)',
+              border: '1px solid var(--color-border)',
+              color: 'var(--color-text-primary)',
+              fontWeight: 'var(--font-weight-medium)',
+              fontFamily: 'var(--font-mono)'
+            }}>
               {isProcessing
                 ? "—"
                 : isActivelyTyping
                 ? `${renderedLineCount} / ${totalLines}`
                 : totalLines}
             </span>
-            <span className="text-zinc-300">&bull;</span>
-            <span className="font-sans">Schema v3.0</span>
           </div>
 
-          <div className="flex items-center gap-2 text-zinc-400 font-sans">
+          <div className="flex items-center gap-2">
             <span>UTF-8</span>
-            <span>&bull;</span>
+            <span>·</span>
             <span>2 spaces</span>
           </div>
         </div>
 
         {/* Summary banner if available */}
         {summary && !isProcessing && (
-          <div className="my-1.5 p-2.5 rounded-md bg-zinc-50 border border-zinc-200 text-xs text-zinc-700 leading-relaxed font-sans">
-            <span className="font-semibold text-zinc-900">Summary: </span>
+          <div className="my-2 p-3 rounded-md" style={{
+            background: 'var(--color-surface)',
+            border: '1px solid var(--color-border)',
+            fontSize: '13px',
+            color: 'var(--color-text-secondary)',
+            lineHeight: '1.5'
+          }}>
+            <span style={{ 
+              fontWeight: 'var(--font-weight-medium)',
+              color: 'var(--color-text-primary)' 
+            }}>Summary: </span>
             {summary}
           </div>
         )}
       </div>
 
       {/* JSON Viewer Window */}
-      <div className="relative my-2.5 flex-1 min-h-0 rounded-lg bg-[#f8f9fa] border border-zinc-200/90 overflow-hidden flex flex-col shadow-inner">
-        {/* Window Chrome Header */}
-        <div className="shrink-0 px-3.5 py-2 bg-zinc-100/80 border-b border-zinc-200 flex items-center justify-between text-xs font-sans">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-red-400" />
-            <span className="w-2 h-2 rounded-full bg-amber-400" />
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
-            <span className="ml-2 text-[11px] text-zinc-600 font-medium font-sans">
-              payload.mesh.json
-            </span>
-          </div>
-          <span
-            className={`text-[10px] px-1.5 py-0.5 rounded border font-medium font-sans uppercase ${
-              isProcessing
-                ? "text-amber-700 bg-amber-50 border-amber-200"
-                : isActivelyTyping
-                ? "text-indigo-700 bg-indigo-50 border-indigo-200"
-                : jsonData
-                ? "text-emerald-700 bg-emerald-50 border-emerald-200"
-                : "text-zinc-500 bg-zinc-100 border-zinc-200"
-            }`}
-          >
-            {isProcessing
-              ? "EXTRACTING"
+      <div className="relative my-3 flex-1 min-h-0 rounded-lg overflow-hidden flex flex-col" style={{
+        background: 'var(--color-surface)',
+        border: '1px solid var(--color-border)'
+      }}>
+        {/* Window Chrome Header - Minimal */}
+        <div className="shrink-0 px-4 h-10 flex items-center justify-between" style={{
+          background: 'var(--color-surface)',
+          borderBottom: '1px solid var(--color-border)',
+          fontSize: '13px'
+        }}>
+          <span style={{
+            color: 'var(--color-text-secondary)',
+            fontWeight: 'var(--font-weight-medium)',
+            fontFamily: 'var(--font-mono)',
+            fontSize: '11px'
+          }}>
+            payload.json
+          </span>
+          <span style={{
+            fontSize: '10px',
+            padding: '2px 8px',
+            borderRadius: 'var(--radius-sm)',
+            border: '1px solid var(--color-border)',
+            fontWeight: 'var(--font-weight-medium)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            ...(isProcessing
+              ? { color: 'var(--color-warning)', background: '#fffbeb', borderColor: '#fde68a' }
               : isActivelyTyping
-              ? "STREAMING"
+              ? { color: 'var(--color-accent)', background: 'var(--color-accent-subtle)', borderColor: 'var(--color-accent)' }
               : jsonData
-              ? "PARSED"
-              : "IDLE"}
+              ? { color: 'var(--color-success)', background: '#f0fdf4', borderColor: '#86efac' }
+              : { color: 'var(--color-text-tertiary)', background: 'var(--color-surface)' })
+          }}>
+            {isProcessing
+              ? "Extracting"
+              : isActivelyTyping
+              ? "Streaming"
+              : jsonData
+              ? "Parsed"
+              : "Idle"}
           </span>
         </div>
 
         {/* ERROR STATE */}
         {errorMessage ? (
-          <div className="p-8 flex-1 flex flex-col items-center justify-center text-center font-sans">
-            <div className="w-12 h-12 rounded-full bg-red-50 border border-red-200 flex items-center justify-center text-red-500 mb-3">
-              <AlertCircle className="w-6 h-6" />
+          <div className="p-8 flex-1 flex flex-col items-center justify-center text-center">
+            <div style={{
+              width: '48px',
+              height: '48px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '50%',
+              background: '#fef2f2',
+              border: '1px solid #fecaca',
+              marginBottom: '12px'
+            }}>
+              <AlertCircle className="w-6 h-6" style={{ color: 'var(--color-danger)' }} />
             </div>
-            <h3 className="text-sm font-semibold text-zinc-900 mb-1 font-sans">
+            <h3 style={{
+              fontSize: '15px',
+              fontWeight: 'var(--font-weight-medium)',
+              color: 'var(--color-text-primary)',
+              marginBottom: '6px'
+            }}>
               Extraction Failed
             </h3>
-            <p className="text-xs text-zinc-500 max-w-md mb-4 font-sans leading-relaxed">
+            <p style={{
+              fontSize: '13px',
+              color: 'var(--color-text-secondary)',
+              maxWidth: '400px',
+              marginBottom: '16px',
+              lineHeight: '1.5'
+            }}>
               {errorMessage}
             </p>
             {onRetry && (
               <button
                 onClick={onRetry}
-                className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium font-sans transition-colors"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '6px 14px',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'var(--color-accent)',
+                  border: 'none',
+                  color: 'white',
+                  fontSize: '13px',
+                  fontWeight: 'var(--font-weight-medium)',
+                  cursor: 'pointer',
+                  transition: 'background 120ms ease-out'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.background = 'var(--color-accent-hover)'}
+                onMouseOut={(e) => e.currentTarget.style.background = 'var(--color-accent)'}
               >
                 <RotateCw className="w-3.5 h-3.5" />
                 <span>Retry Extraction</span>
@@ -340,122 +476,152 @@ export function JsonOutputPanel({
             )}
           </div>
         ) : isProcessing ? (
-          /* SKELETON LOADER — Code-specific layout with zero spinners */
-          <div className="p-4 flex-1 min-h-0 overflow-hidden font-mono text-[13px] leading-6 select-none animate-pulse">
-            <div className="space-y-1.5">
+          /* SKELETON LOADER */
+          <div className="p-4 flex-1 min-h-0 overflow-hidden select-none" style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: '13px',
+            lineHeight: '1.5'
+          }}>
+            <div className="space-y-2">
               <div className="flex items-center gap-4">
-                <span className="text-[11px] text-zinc-300 w-8 text-right font-mono">1</span>
-                <span className="text-zinc-400 font-mono">&#123;</span>
+                <span style={{ fontSize: '11px', color: 'var(--color-text-disabled)', width: '32px', textAlign: 'right' }}>1</span>
+                <span style={{ color: 'var(--color-text-tertiary)' }}>&#123;</span>
               </div>
               <div className="flex items-center gap-4">
-                <span className="text-[11px] text-zinc-300 w-8 text-right font-mono">2</span>
+                <span style={{ fontSize: '11px', color: 'var(--color-text-disabled)', width: '32px', textAlign: 'right' }}>2</span>
                 <div className="flex items-center gap-2 pl-4">
-                  <div className="h-3 w-20 bg-indigo-200/80 rounded" />
-                  <span className="text-zinc-300 font-mono">:</span>
-                  <div className="h-3 w-28 bg-emerald-200/80 rounded" />
+                  <div className="skeleton h-3 w-20 rounded" />
+                  <span style={{ color: 'var(--color-text-tertiary)' }}>:</span>
+                  <div className="skeleton h-3 w-28 rounded" />
                 </div>
               </div>
               <div className="flex items-center gap-4">
-                <span className="text-[11px] text-zinc-300 w-8 text-right font-mono">3</span>
+                <span style={{ fontSize: '11px', color: 'var(--color-text-disabled)', width: '32px', textAlign: 'right' }}>3</span>
                 <div className="flex items-center gap-2 pl-4">
-                  <div className="h-3 w-16 bg-indigo-200/80 rounded" />
-                  <span className="text-zinc-300 font-mono">:</span>
-                  <div className="h-3 w-64 bg-emerald-200/80 rounded" />
+                  <div className="skeleton h-3 w-16 rounded" />
+                  <span style={{ color: 'var(--color-text-tertiary)' }}>:</span>
+                  <div className="skeleton h-3 w-64 rounded" />
                 </div>
               </div>
               <div className="flex items-center gap-4">
-                <span className="text-[11px] text-zinc-300 w-8 text-right font-mono">4</span>
+                <span style={{ fontSize: '11px', color: 'var(--color-text-disabled)', width: '32px', textAlign: 'right' }}>4</span>
                 <div className="flex items-center gap-2 pl-4">
-                  <div className="h-3 w-20 bg-indigo-200/80 rounded" />
-                  <span className="text-zinc-300 font-mono">: [</span>
+                  <div className="skeleton h-3 w-20 rounded" />
+                  <span style={{ color: 'var(--color-text-tertiary)' }}>: [</span>
                 </div>
               </div>
               <div className="flex items-center gap-4">
-                <span className="text-[11px] text-zinc-300 w-8 text-right font-mono">5</span>
-                <div className="pl-8 text-zinc-400 font-mono">&#123;</div>
+                <span style={{ fontSize: '11px', color: 'var(--color-text-disabled)', width: '32px', textAlign: 'right' }}>5</span>
+                <div className="pl-8" style={{ color: 'var(--color-text-tertiary)' }}>&#123;</div>
               </div>
               <div className="flex items-center gap-4">
-                <span className="text-[11px] text-zinc-300 w-8 text-right font-mono">6</span>
+                <span style={{ fontSize: '11px', color: 'var(--color-text-disabled)', width: '32px', textAlign: 'right' }}>6</span>
                 <div className="flex items-center gap-2 pl-12">
-                  <div className="h-3 w-14 bg-indigo-200/80 rounded" />
-                  <span className="text-zinc-300 font-mono">:</span>
-                  <div className="h-3 w-28 bg-emerald-200/80 rounded" />
+                  <div className="skeleton h-3 w-14 rounded" />
+                  <span style={{ color: 'var(--color-text-tertiary)' }}>:</span>
+                  <div className="skeleton h-3 w-28 rounded" />
                 </div>
               </div>
               <div className="flex items-center gap-4">
-                <span className="text-[11px] text-zinc-300 w-8 text-right font-mono">7</span>
+                <span style={{ fontSize: '11px', color: 'var(--color-text-disabled)', width: '32px', textAlign: 'right' }}>7</span>
                 <div className="flex items-center gap-2 pl-12">
-                  <div className="h-3 w-20 bg-indigo-200/80 rounded" />
-                  <span className="text-zinc-300 font-mono">:</span>
-                  <div className="h-3 w-14 bg-amber-200/80 rounded" />
+                  <div className="skeleton h-3 w-20 rounded" />
+                  <span style={{ color: 'var(--color-text-tertiary)' }}>:</span>
+                  <div className="skeleton h-3 w-14 rounded" />
                 </div>
               </div>
               <div className="flex items-center gap-4">
-                <span className="text-[11px] text-zinc-300 w-8 text-right font-mono">8</span>
+                <span style={{ fontSize: '11px', color: 'var(--color-text-disabled)', width: '32px', textAlign: 'right' }}>8</span>
                 <div className="flex items-center gap-2 pl-12">
-                  <div className="h-3 w-24 bg-indigo-200/80 rounded" />
-                  <span className="text-zinc-300 font-mono">:</span>
-                  <div className="h-3 w-40 bg-emerald-200/80 rounded" />
+                  <div className="skeleton h-3 w-24 rounded" />
+                  <span style={{ color: 'var(--color-text-tertiary)' }}>:</span>
+                  <div className="skeleton h-3 w-40 rounded" />
                 </div>
               </div>
               <div className="flex items-center gap-4">
-                <span className="text-[11px] text-zinc-300 w-8 text-right font-mono">9</span>
-                <div className="pl-8 text-zinc-400 font-mono">&#125;,</div>
+                <span style={{ fontSize: '11px', color: 'var(--color-text-disabled)', width: '32px', textAlign: 'right' }}>9</span>
+                <div className="pl-8" style={{ color: 'var(--color-text-tertiary)' }}>&#125;,</div>
               </div>
               <div className="flex items-center gap-4">
-                <span className="text-[11px] text-zinc-300 w-8 text-right font-mono">10</span>
-                <div className="pl-8 text-zinc-400 font-mono">&#123;</div>
+                <span style={{ fontSize: '11px', color: 'var(--color-text-disabled)', width: '32px', textAlign: 'right' }}>10</span>
+                <div className="pl-8" style={{ color: 'var(--color-text-tertiary)' }}>&#123;</div>
               </div>
               <div className="flex items-center gap-4">
-                <span className="text-[11px] text-zinc-300 w-8 text-right font-mono">11</span>
+                <span style={{ fontSize: '11px', color: 'var(--color-text-disabled)', width: '32px', textAlign: 'right' }}>11</span>
                 <div className="flex items-center gap-2 pl-12">
-                  <div className="h-3 w-16 bg-indigo-200/80 rounded" />
-                  <span className="text-zinc-300 font-mono">:</span>
-                  <div className="h-3 w-32 bg-emerald-200/80 rounded" />
+                  <div className="skeleton h-3 w-16 rounded" />
+                  <span style={{ color: 'var(--color-text-tertiary)' }}>:</span>
+                  <div className="skeleton h-3 w-32 rounded" />
                 </div>
               </div>
               <div className="flex items-center gap-4">
-                <span className="text-[11px] text-zinc-300 w-8 text-right font-mono">12</span>
+                <span style={{ fontSize: '11px', color: 'var(--color-text-disabled)', width: '32px', textAlign: 'right' }}>12</span>
                 <div className="flex items-center gap-2 pl-12">
-                  <div className="h-3 w-20 bg-indigo-200/80 rounded" />
-                  <span className="text-zinc-300 font-mono">:</span>
-                  <div className="h-3 w-14 bg-amber-200/80 rounded" />
+                  <div className="skeleton h-3 w-20 rounded" />
+                  <span style={{ color: 'var(--color-text-tertiary)' }}>:</span>
+                  <div className="skeleton h-3 w-14 rounded" />
                 </div>
               </div>
               <div className="flex items-center gap-4">
-                <span className="text-[11px] text-zinc-300 w-8 text-right font-mono">13</span>
-                <div className="pl-8 text-zinc-400 font-mono">&#125;</div>
+                <span style={{ fontSize: '11px', color: 'var(--color-text-disabled)', width: '32px', textAlign: 'right' }}>13</span>
+                <div className="pl-8" style={{ color: 'var(--color-text-tertiary)' }}>&#125;</div>
               </div>
               <div className="flex items-center gap-4">
-                <span className="text-[11px] text-zinc-300 w-8 text-right font-mono">14</span>
-                <div className="pl-4 text-zinc-400 font-mono">]</div>
+                <span style={{ fontSize: '11px', color: 'var(--color-text-disabled)', width: '32px', textAlign: 'right' }}>14</span>
+                <div className="pl-4" style={{ color: 'var(--color-text-tertiary)' }}>]</div>
               </div>
               <div className="flex items-center gap-4">
-                <span className="text-[11px] text-zinc-300 w-8 text-right font-mono">15</span>
-                <span className="text-zinc-400 font-mono">&#125;</span>
+                <span style={{ fontSize: '11px', color: 'var(--color-text-disabled)', width: '32px', textAlign: 'right' }}>15</span>
+                <span style={{ color: 'var(--color-text-tertiary)' }}>&#125;</span>
               </div>
             </div>
           </div>
         ) : !jsonData ? (
           /* EMPTY STATE */
-          <div className="p-8 flex-1 flex flex-col items-center justify-center text-center font-sans">
-            <div className="w-12 h-12 rounded-xl bg-zinc-100 border border-zinc-200/80 flex items-center justify-center text-zinc-400 mb-3.5 shadow-sm">
-              <FileCode2 className="w-6 h-6" />
+          <div className="p-8 flex-1 flex flex-col items-center justify-center text-center">
+            <div style={{
+              width: '48px',
+              height: '48px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: 'var(--radius-md)',
+              background: 'var(--color-surface)',
+              border: '1px solid var(--color-border)',
+              marginBottom: '14px'
+            }}>
+              <FileCode2 className="w-6 h-6" style={{ color: 'var(--color-text-tertiary)' }} />
             </div>
-            <h3 className="text-sm font-semibold text-zinc-800 mb-1 font-sans">
+            <h3 style={{
+              fontSize: '15px',
+              fontWeight: 'var(--font-weight-medium)',
+              color: 'var(--color-text-primary)',
+              marginBottom: '6px'
+            }}>
               Awaiting Document
             </h3>
-            <p className="text-xs text-zinc-500 max-w-[280px] leading-relaxed font-sans">
-              Upload a document on the left to extract structured JSON data with grounded source citations.
+            <p style={{
+              fontSize: '13px',
+              color: 'var(--color-text-secondary)',
+              maxWidth: '280px',
+              lineHeight: '1.5'
+            }}>
+              Upload a document on the left to extract structured JSON data.
             </p>
           </div>
         ) : (
           /* ACTIVE / STREAMING CODE VIEWER */
           <div
             ref={codeContainerRef}
-            className="p-4 flex-1 min-h-0 overflow-auto font-mono text-zinc-800 text-[13px] leading-6 select-text scroll-smooth"
+            className="p-4 flex-1 min-h-0 overflow-auto select-text scroll-smooth"
+            style={{
+              fontFamily: 'var(--font-mono)',
+              color: 'var(--color-text-primary)',
+              fontSize: '13px',
+              lineHeight: '1.5'
+            }}
           >
-            <div className="table w-full font-mono">
+            <div className="table w-full">
               {renderHighlightedJson(visibleLines)}
             </div>
           </div>
@@ -463,15 +629,20 @@ export function JsonOutputPanel({
       </div>
 
       {/* Bottom Actions */}
-      <div className="shrink-0 pt-3 border-t border-zinc-200 flex flex-col sm:flex-row items-center justify-between gap-3 font-sans">
-        <div className="flex items-center gap-3 text-[11px] text-zinc-500 font-sans">
-          <span className="flex items-center gap-1 font-sans">
-            <Cpu className="w-3.5 h-3.5 text-indigo-600" />{" "}
+      <div className="shrink-0 pt-3 flex flex-col sm:flex-row items-center justify-between gap-3" style={{
+        borderTop: '1px solid var(--color-border)'
+      }}>
+        <div className="flex items-center gap-3" style={{
+          fontSize: '11px',
+          color: 'var(--color-text-tertiary)'
+        }}>
+          <span className="flex items-center gap-1">
+            <Cpu className="w-3.5 h-3.5" style={{ color: 'var(--color-accent)' }} />
             {isProcessing ? "Processing..." : `${processingTimeMs}ms`}
           </span>
-          <span className="text-zinc-300">&bull;</span>
-          <span className="flex items-center gap-1 font-sans">
-            <Code2 className="w-3.5 h-3.5 text-emerald-600" />{" "}
+          <span>·</span>
+          <span className="flex items-center gap-1">
+            <Code2 className="w-3.5 h-3.5" style={{ color: 'var(--color-success)' }} />
             {isProcessing ? "—" : `${confidenceScore} conf`}
           </span>
         </div>
@@ -479,7 +650,30 @@ export function JsonOutputPanel({
         <button
           onClick={onOpenChat}
           disabled={!jsonData || isProcessing}
-          className="w-full sm:w-auto px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium text-xs tracking-wide transition-all shadow-sm active:scale-95 flex items-center justify-center gap-2 font-sans"
+          style={{
+            width: '100%',
+            maxWidth: '200px',
+            padding: '7px 16px',
+            borderRadius: 'var(--radius-md)',
+            background: !jsonData || isProcessing ? 'var(--color-surface)' : 'var(--color-accent)',
+            border: 'none',
+            color: !jsonData || isProcessing ? 'var(--color-text-disabled)' : 'white',
+            fontSize: '13px',
+            fontWeight: 'var(--font-weight-medium)',
+            cursor: !jsonData || isProcessing ? 'not-allowed' : 'pointer',
+            opacity: !jsonData || isProcessing ? 0.4 : 1,
+            transition: 'all 120ms ease-out',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px'
+          }}
+          onMouseOver={(e) => {
+            if (jsonData && !isProcessing) e.currentTarget.style.background = 'var(--color-accent-hover)';
+          }}
+          onMouseOut={(e) => {
+            if (jsonData && !isProcessing) e.currentTarget.style.background = 'var(--color-accent)';
+          }}
         >
           <Sparkles className="w-3.5 h-3.5" />
           Chat with Document

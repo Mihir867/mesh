@@ -10,7 +10,7 @@ const openSans = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "DocStruct - Document Intelligence Platform",
+  title: "MESH - Document Intelligence Platform",
   description: "AI-powered document processing and extraction",
 };
 

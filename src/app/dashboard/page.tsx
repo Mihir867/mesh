@@ -3,6 +3,7 @@ import { UserButton } from "@clerk/nextjs";
 import { redirect } from "next/navigation";
 import { SplitDashboard } from "@/components/dashboard/split-dashboard";
 import { FileText } from "lucide-react";
+import { FooterLink } from "@/components/landing/cta-buttons";
 
 export default async function DashboardPage() {
   const { userId } = await auth();
@@ -18,39 +19,49 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col justify-between bg-[#f8f9fa] text-zinc-900">
-      {/* Sleek Top Navigation Bar */}
-      <header className="border-b border-zinc-200/80 text-zinc-900 bg-white/90 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-[1520px] mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex justify-between items-center">
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--color-bg)' }}>
+      {/* Premium Header - Minimal, precise, hairline border */}
+      <header className="sticky top-0 z-50" style={{
+        borderBottom: '1px solid var(--color-border)',
+        background: 'var(--color-bg)'
+      }}>
+        <div className="max-w-[1600px] mx-auto px-6 lg:px-8 h-16 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-zinc-100 border border-zinc-200 flex items-center justify-center text-zinc-900 shadow-sm">
-              <FileText className="h-5 w-5 text-indigo-600" />
+            <div style={{
+              width: '32px',
+              height: '32px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'var(--color-surface)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-md)'
+            }}>
+              <FileText className="w-4 h-4" style={{ color: 'var(--color-accent)' }} />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-base font-bold tracking-tight text-zinc-900 font-sans">
-                  DocStruct
-                </span>
-                <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-200">
-                  Studio
-                </span>
-              </div>
-              <p className="text-[11px] text-zinc-500 hidden sm:block">
-                Document Parsing &amp; JSON Intelligence
-              </p>
-            </div>
+            <span style={{
+              fontSize: '15px',
+              fontWeight: 'var(--font-weight-medium)',
+              color: 'var(--color-text-primary)',
+              letterSpacing: '-0.006em'
+            }}>
+              MESH
+            </span>
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-100/80 border border-zinc-200 text-xs text-zinc-700 font-mono">
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <div className="hidden md:flex items-center" style={{
+              fontSize: '13px',
+              fontWeight: 'var(--font-weight-regular)',
+              color: 'var(--color-text-secondary)'
+            }}>
               {user.emailAddresses[0]?.emailAddress}
             </div>
 
             <UserButton
               appearance={{
                 elements: {
-                  avatarBox: "w-9 h-9 ring-2 ring-zinc-200",
+                  avatarBox: "w-8 h-8",
                 },
               }}
             />
@@ -58,28 +69,28 @@ export default async function DashboardPage() {
         </div>
       </header>
 
-      {/* Main Split-Screen Canvas */}
-      <main className="flex-1 max-w-[1520px] w-full mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 flex flex-col justify-center">
+      {/* Main Content Area */}
+      <main className="flex-1 max-w-[1600px] w-full mx-auto px-6 lg:px-8 py-8 flex flex-col">
         <SplitDashboard />
       </main>
 
-      {/* Subtle Minimal Footer */}
-      <footer className="border-t border-zinc-200/80 py-4 text-center text-xs text-zinc-500 font-mono bg-white">
-        <div className="max-w-[1520px] mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>
-            &copy; {new Date().getFullYear()} DocStruct &bull; Mesh Document
-            Intelligence
+      {/* Premium Footer - Minimal hairline */}
+      <footer style={{
+        borderTop: '1px solid var(--color-border)',
+        background: 'var(--color-bg)'
+      }}>
+        <div className="max-w-[1600px] mx-auto px-6 lg:px-8 py-4 flex items-center justify-between">
+          <span style={{
+            fontSize: '13px',
+            fontWeight: 'var(--font-weight-regular)',
+            color: 'var(--color-text-tertiary)'
+          }}>
+            © {new Date().getFullYear()} MESH
           </span>
-          <div className="flex items-center gap-4 text-zinc-500">
-            <span className="hover:text-zinc-900 cursor-pointer transition-colors">
-              Privacy
-            </span>
-            <span className="hover:text-zinc-900 cursor-pointer transition-colors">
-              Terms
-            </span>
-            <span className="hover:text-zinc-900 cursor-pointer transition-colors">
-              API Docs
-            </span>
+          <div className="flex items-center gap-6">
+            <FooterLink>Privacy</FooterLink>
+            <FooterLink>Terms</FooterLink>
+            <FooterLink>API Docs</FooterLink>
           </div>
         </div>
       </footer>
