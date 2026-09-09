@@ -1,21 +1,21 @@
 "use client"
 
-import { SignInButton, SignUpButton } from "@clerk/nextjs";
+import Link from "next/link";
 import { useState } from "react";
 
 export function CTAButtons() {
   return (
     <div className="flex items-center gap-3 pt-4">
-      <SignUpButton mode="modal">
+      <Link href="/dashboard">
         <InteractiveButton variant="primary">
           Start Free Trial
         </InteractiveButton>
-      </SignUpButton>
-      <SignInButton mode="modal">
+      </Link>
+      <Link href="/dashboard">
         <InteractiveButton variant="secondary">
           Sign In
         </InteractiveButton>
-      </SignInButton>
+      </Link>
     </div>
   );
 }
@@ -23,16 +23,16 @@ export function CTAButtons() {
 export function HeaderCTAButtons() {
   return (
     <div className="flex items-center gap-3">
-      <SignInButton mode="modal">
+      <Link href="/dashboard">
         <InteractiveButton variant="ghost" size="sm">
           Sign In
         </InteractiveButton>
-      </SignInButton>
-      <SignUpButton mode="modal">
+      </Link>
+      <Link href="/dashboard">
         <InteractiveButton variant="primary" size="sm">
           Get Started
         </InteractiveButton>
-      </SignUpButton>
+      </Link>
     </div>
   );
 }

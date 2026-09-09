@@ -445,7 +445,19 @@ export function ChatSidebar({
                         {msg.content}
                       </div>
                     ) : (
-                      <div className="prose prose-xs max-w-none prose-zinc prose-p:my-2 prose-p:leading-relaxed prose-headings:mt-3 prose-headings:mb-2 prose-headings:font-semibold prose-ul:my-2 prose-ol:my-2 prose-li:my-0.5 prose-strong:font-semibold prose-strong:text-zinc-900 prose-code:text-xs prose-code:bg-zinc-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:font-mono prose-code:before:content-[''] prose-code:after:content-['']">
+                      <div className="prose prose-sm max-w-none prose-zinc 
+                        prose-p:my-3 prose-p:leading-[1.65] 
+                        prose-headings:mt-6 prose-headings:mb-3 prose-headings:font-semibold prose-headings:leading-tight
+                        prose-h1:text-lg prose-h2:text-base prose-h3:text-sm
+                        prose-ul:my-3 prose-ul:space-y-1.5 prose-ol:my-3 prose-ol:space-y-1.5 
+                        prose-li:my-0 prose-li:leading-relaxed
+                        prose-strong:font-semibold prose-strong:text-zinc-900 
+                        prose-code:text-xs prose-code:bg-zinc-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:font-mono prose-code:before:content-[''] prose-code:after:content-['']
+                        prose-pre:my-4 prose-pre:bg-zinc-50 prose-pre:border prose-pre:border-zinc-200
+                        prose-blockquote:my-4 prose-blockquote:border-l-2 prose-blockquote:border-zinc-300 prose-blockquote:pl-4 prose-blockquote:italic
+                        prose-hr:my-6 prose-hr:border-zinc-200
+                        prose-table:my-4 prose-th:p-2 prose-td:p-2
+                        [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
                           {msg.content}
                         </ReactMarkdown>

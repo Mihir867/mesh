@@ -7,14 +7,11 @@ import { FooterLink } from "@/components/landing/cta-buttons";
 
 export default async function DashboardPage() {
   const { userId } = await auth();
-
-  if (!userId) {
-    redirect("/");
-  }
-
   const user = await currentUser();
 
-  if (!user) {
+  // Clerk middleware handles auth redirects automatically
+  // This page is protected by middleware, so we only need to handle edge cases
+  if (!userId || !user) {
     redirect("/");
   }
 
