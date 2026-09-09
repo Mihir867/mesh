@@ -1,8 +1,8 @@
-# DocStruct (Mesh)
+# Mesh
 
 > Automated, schema-induced document intelligence pipeline with exact source snippet grounding, multi-format client previewers, and a minimal-context Q&A assistant.
 
-DocStruct transforms heterogeneous documents (**PDF**, **DOCX**, **XLSX**, **CSV**, **TXT**) into type-safe, validated JSON with exact substring citations, zero-token deterministic extraction for tabular data, and full session persistence across browser reloads.
+MESH transforms heterogeneous documents (**PDF**, **DOCX**, **XLSX**, **CSV**, **TXT**) into type-safe, validated JSON with exact substring citations, zero-token deterministic extraction for tabular data, and full session persistence across browser reloads.
 
 - 📐 **Architecture Specification:** See [design.md](./design.md)
 - 🧠 **Engineering Decisions & Tradeoffs:** See [decisions.md](./decisions.md)
@@ -13,8 +13,8 @@ DocStruct transforms heterogeneous documents (**PDF**, **DOCX**, **XLSX**, **CSV
 
 - **Multi-Format Ingestion**: Supports `.pdf`, `.docx`, `.xlsx`, `.csv`, and `.txt`.
 - **Two-Track Pipeline**:
-  - *Path A (Tabular: CSV/XLSX)*: Deterministic parsing via `papaparse` and `xlsx` (zero LLM tokens burned for row data).
-  - *Path B (Unstructured Text: PDF/DOCX/TXT)*: Two-pass schema induction with Gemini 3.6 Flash and grammar-constrained JSON decoding (`responseSchema`).
+  - _Path A (Tabular: CSV/XLSX)_: Deterministic parsing via `papaparse` and `xlsx` (zero LLM tokens burned for row data).
+  - _Path B (Unstructured Text: PDF/DOCX/TXT)_: Two-pass schema induction with Gemini 3.6 Flash and grammar-constrained JSON decoding (`responseSchema`).
 - **Hallucination Defense**: Every extracted field must quote the exact `source_snippet` from the document; documents are wrapped inside `<untrusted_document>` XML tags to neutralize indirect prompt injection.
 - **Minimal-Context Q&A Assistant**: Injects only pre-verified structured JSON into chat prompts, reducing token overhead by ~98% and delivering sub-second grounded answers.
 - **Native Multi-Format Previews**: High-DPI Retina PDF canvas (`pdfjs-dist`), native Word XML stylesheet renderer (`docx-preview`), and virtualized spreadsheet grid.
@@ -38,6 +38,7 @@ DocStruct transforms heterogeneous documents (**PDF**, **DOCX**, **XLSX**, **CSV
 ### Prerequisites
 
 Ensure you have the following installed / configured:
+
 - **Node.js**: `v20.x` or later
 - **Package Manager**: `npm`, `pnpm`, or `bun`
 - **PostgreSQL Database**: A running local Postgres instance ($\ge 15$) or a free serverless database on [Neon](https://neon.tech)
@@ -122,7 +123,8 @@ npx prisma generate
 npx prisma db push
 ```
 
-*(Optional)* To inspect your database tables and rows visually:
+_(Optional)_ To inspect your database tables and rows visually:
+
 ```bash
 npx prisma studio
 ```
@@ -188,6 +190,7 @@ mesh/
 ## Known Limitations
 
 See [decisions.md](./decisions.md#project-limitations--honest-constraints) for detailed technical discussion on system constraints, including:
+
 - No OCR for scanned/photocopied documents without embedded text layers.
 - First-sheet limitation on multi-tab Excel workbooks.
 - Synchronous serverless HTTP timeout window on 100+ page documents.
