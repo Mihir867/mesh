@@ -950,17 +950,91 @@ export function JsonOutputPanel({
             )}
           </div>
         ) : isProcessing ? (
-          /* Loading State */
-          <div className="p-8 flex-1 flex flex-col items-center justify-center text-center">
-            <div className="w-10 h-10 flex items-center justify-center rounded-full bg-[var(--color-accent-subtle)] border border-[var(--color-accent)]/30 mb-3 animate-pulse">
-              <Sparkles className="w-5 h-5 text-[var(--color-accent)] animate-spin" />
+          /* Processing Skeleton - premium shimmer effect */
+          <div className="flex-1 min-h-0 flex flex-col gap-3 overflow-hidden">
+            {/* Skeleton KPI Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 shrink-0">
+              {[1, 2, 3, 4].map((i) => (
+                <div 
+                  key={i} 
+                  className="p-2.5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg flex items-center gap-2.5"
+                  style={{ animationDelay: `${i * 75}ms` }}
+                >
+                  <div className="w-7 h-7 rounded-md skeleton" />
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <div className="h-2 skeleton rounded w-14" />
+                    <div className="h-3 skeleton rounded w-20" />
+                  </div>
+                </div>
+              ))}
             </div>
-            <h3 className="text-sm font-medium text-[var(--color-text-primary)] mb-1">
-              Extracting Structured Data...
-            </h3>
-            <p className="text-xs text-[var(--color-text-secondary)] max-w-xs leading-relaxed">
-              Analyzing document layout, extracting typed values, and grounding exact source citations.
-            </p>
+
+            {/* Skeleton Filter Bar */}
+            <div className="shrink-0 p-2.5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-28 skeleton rounded-[var(--radius-sm)]" />
+                  <div className="h-8 w-36 skeleton rounded-[var(--radius-sm)]" style={{ animationDelay: '100ms' }} />
+                  <div className="h-8 w-24 skeleton rounded-[var(--radius-md)]" style={{ animationDelay: '200ms' }} />
+                </div>
+                <div className="h-3 w-16 skeleton rounded" style={{ animationDelay: '300ms' }} />
+              </div>
+            </div>
+
+            {/* Skeleton Table */}
+            <div className="flex-1 min-h-0 border border-[var(--color-border)] rounded-lg overflow-hidden bg-[var(--color-bg)]">
+              <table className="w-full text-left border-collapse">
+                <thead className="bg-[var(--color-surface)] border-b border-[var(--color-border)]">
+                  <tr>
+                    <th className="py-2.5 px-3 w-3/6">
+                      <div className="h-3 skeleton rounded w-24" />
+                    </th>
+                    <th className="py-2.5 px-3 w-1/6 text-right">
+                      <div className="h-3 skeleton rounded w-12 ml-auto" style={{ animationDelay: '75ms' }} />
+                    </th>
+                    <th className="py-2.5 px-3 w-1/6 text-right">
+                      <div className="h-3 skeleton rounded w-16 ml-auto" style={{ animationDelay: '150ms' }} />
+                    </th>
+                    <th className="py-2.5 px-3 w-1/6 text-right">
+                      <div className="h-3 skeleton rounded w-12 ml-auto" style={{ animationDelay: '225ms' }} />
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--color-border-subtle)]">
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
+                    <tr key={i} className="group hover:bg-[var(--color-surface)] transition-colors">
+                      <td className="py-2 px-3">
+                        <div 
+                          className="h-3 skeleton rounded" 
+                          style={{ 
+                            width: `${50 + (i * 4)}%`,
+                            animationDelay: `${i * 60}ms`
+                          }} 
+                        />
+                      </td>
+                      <td className="py-2 px-3 text-right">
+                        <div 
+                          className="h-3 skeleton rounded w-8 ml-auto" 
+                          style={{ animationDelay: `${i * 60 + 20}ms` }} 
+                        />
+                      </td>
+                      <td className="py-2 px-3 text-right">
+                        <div 
+                          className="h-3 skeleton rounded w-16 ml-auto" 
+                          style={{ animationDelay: `${i * 60 + 40}ms` }} 
+                        />
+                      </td>
+                      <td className="py-2 px-3 text-right">
+                        <div 
+                          className="h-3 skeleton rounded w-20 ml-auto" 
+                          style={{ animationDelay: `${i * 60 + 60}ms` }} 
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         ) : !jsonData ? (
           /* Empty State */
@@ -1088,14 +1162,14 @@ export function JsonOutputPanel({
             {/* Quick Filter Bar & Sub-View Switcher */}
             <div className="shrink-0 p-2.5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg flex flex-wrap items-center justify-between gap-2.5">
               <div className="flex flex-wrap items-center gap-2 flex-1 min-w-[200px]">
-                {/* Line Items vs Key Fields Sub-Tabs (if document has line items) */}
+                {/* Line Items vs Key Fields Sub-Tabs */}
                 {!parsedData.isTabularSpreadsheet && parsedData.lineItems.length > 0 && (
-                  <div className="flex items-center gap-1 p-0.5 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-md">
+                  <div className="flex items-center gap-0.5 p-0.5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-sm)]">
                     <button
                       onClick={() => handleSubViewChange("fields")}
-                      className={`px-2 py-0.5 text-xs font-medium rounded transition-colors ${
+                      className={`px-2.5 py-1 text-[13px] font-[510] tracking-[-0.006em] rounded-[var(--radius-sm)] transition-[background,color] duration-150 ${
                         tableSubView === "fields"
-                          ? "bg-[var(--color-surface)] text-[var(--color-text-primary)] shadow-2xs font-semibold"
+                          ? "bg-[var(--color-bg)] text-[var(--color-text-primary)]"
                           : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
                       }`}
                     >
@@ -1103,44 +1177,44 @@ export function JsonOutputPanel({
                     </button>
                     <button
                       onClick={() => handleSubViewChange("lineItems")}
-                      className={`px-2 py-0.5 text-xs font-medium rounded transition-colors flex items-center gap-1 ${
+                      className={`px-2.5 py-1 text-[13px] font-[510] tracking-[-0.006em] rounded-[var(--radius-sm)] transition-[background,color] duration-150 flex items-center gap-1.5 ${
                         tableSubView === "lineItems"
-                          ? "bg-[var(--color-surface)] text-[var(--color-text-primary)] shadow-2xs font-semibold"
+                          ? "bg-[var(--color-bg)] text-[var(--color-text-primary)]"
                           : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
                       }`}
                     >
-                      <ListOrdered className="w-3 h-3" />
+                      <ListOrdered className="w-3.5 h-3.5" />
                       Line Items ({parsedData.lineItems.length})
                     </button>
                   </div>
                 )}
 
-                {/* Preset Filter Select Box - Custom Dropdown */}
+                {/* Smart Filters Dropdown - Icon-only with tooltip would be ideal, but keeping text for clarity */}
                 <div className="relative shrink-0" ref={presetDropdownRef}>
                   <button
                     onClick={() => setIsPresetDropdownOpen(!isPresetDropdownOpen)}
-                    className="h-7 px-2.5 text-xs bg-[var(--color-bg)] border border-[var(--color-border)] text-[var(--color-text-secondary)] rounded cursor-pointer hover:border-[var(--color-accent)] focus:outline-none focus:border-[var(--color-accent)] transition-colors font-medium flex items-center gap-1.5"
+                    className="h-8 px-3 text-[13px] font-[510] tracking-[-0.006em] bg-[var(--color-bg)] border border-[var(--color-border)] text-[var(--color-text-secondary)] rounded-[var(--radius-md)] hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-subtle)] transition-[border,color] duration-150 flex items-center gap-2"
                     title="Smart filter suggestions based on your data"
                   >
-                    <Sparkles className="w-3 h-3" />
+                    <Sparkles className="w-3.5 h-3.5" />
                     <span>Smart Filters</span>
                     {generateDynamicPresets.length > 0 && (
-                      <span className="ml-0.5 px-1.5 py-0.5 bg-[var(--color-accent)]/10 text-[var(--color-accent)] rounded text-[10px] font-bold">
+                      <span className="ml-auto text-[11px] text-[var(--color-text-tertiary)]">
                         {generateDynamicPresets.length}
                       </span>
                     )}
-                    <ChevronDown className={`w-3.5 h-3.5 text-[var(--color-text-tertiary)] transition-transform ${isPresetDropdownOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`w-3.5 h-3.5 text-[var(--color-text-tertiary)] transition-transform duration-150 ${isPresetDropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
                   
                   {isPresetDropdownOpen && (
-                    <div className="absolute top-full left-0 mt-1 w-72 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
-                      <div className="p-1.5">
+                    <div className="absolute top-full left-0 mt-1 w-72 bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-[var(--radius-lg)] z-50 max-h-96 overflow-y-auto shadow-[0px_1px_2px_rgba(0,0,0,0.04),0px_4px_12px_rgba(0,0,0,0.08)]">
+                      <div className="p-1">
                         {generateDynamicPresets.length === 0 ? (
-                          <div className="px-3 py-4 text-center">
-                            <p className="text-xs text-[var(--color-text-secondary)]">
+                          <div className="px-3 py-8 text-center">
+                            <p className="text-[13px] font-[400] text-[var(--color-text-secondary)]">
                               No suggested filters available
                             </p>
-                            <p className="text-[10px] text-[var(--color-text-tertiary)] mt-1">
+                            <p className="text-[13px] font-[400] text-[var(--color-text-tertiary)] mt-1">
                               Try adding custom filters using the filter builder
                             </p>
                           </div>
@@ -1154,9 +1228,9 @@ export function JsonOutputPanel({
                               }, {} as Record<string, typeof generateDynamicPresets>)
                             ).map(([category, presets]) => (
                               <div key={category}>
-                                <div className="px-2 py-1.5 text-[10px] uppercase font-semibold text-[var(--color-text-tertiary)] tracking-wider flex items-center gap-2">
+                                <div className="px-3 py-2 text-[13px] font-[510] tracking-[-0.006em] text-[var(--color-text-tertiary)] flex items-center justify-between">
                                   <span>{category}</span>
-                                  <span className="text-[9px] px-1.5 py-0.5 bg-[var(--color-surface)] rounded">
+                                  <span className="text-[11px] font-[400]">
                                     {presets.length}
                                   </span>
                                 </div>
@@ -1167,12 +1241,10 @@ export function JsonOutputPanel({
                                       addFilterFromQuery(preset.value);
                                       setIsPresetDropdownOpen(false);
                                     }}
-                                    className="w-full text-left px-2 py-1.5 text-xs rounded hover:bg-[var(--color-surface)] transition-colors flex items-start gap-2"
+                                    className="w-full text-left px-3 py-2 text-[13px] rounded-[var(--radius-sm)] hover:bg-[var(--color-surface)] transition-colors duration-150"
                                   >
-                                    <div className="flex-1">
-                                      <div className="font-medium text-[var(--color-text-primary)]">{preset.label}</div>
-                                      <div className="text-[10px] text-[var(--color-text-tertiary)] mt-0.5">{preset.desc}</div>
-                                    </div>
+                                    <div className="font-[510] tracking-[-0.006em] text-[var(--color-text-primary)]">{preset.label}</div>
+                                    <div className="text-[13px] font-[400] text-[var(--color-text-tertiary)] mt-0.5">{preset.desc}</div>
                                   </button>
                                 ))}
                               </div>
@@ -1184,9 +1256,9 @@ export function JsonOutputPanel({
                   )}
                 </div>
 
-                {/* Search Input with Better Placeholder */}
+                {/* Search Input */}
                 <div className="relative flex-1 min-w-[200px] max-w-[320px]">
-                  <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]" />
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]" />
                   <input
                     type="text"
                     value={searchQuery}
@@ -1201,23 +1273,23 @@ export function JsonOutputPanel({
                         ? 'Type filter and press Enter (e.g., qty > 5)'
                         : 'Type filter and press Enter (e.g., amount > 5000)'
                     }
-                    className="w-full pl-8 pr-16 py-1 text-xs bg-[var(--color-bg)] border border-[var(--color-border)] rounded focus:outline-none focus:border-[var(--color-accent)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)]"
+                    className="w-full h-8 pl-9 pr-20 text-[13px] font-[400] tracking-[-0.006em] bg-[var(--color-bg)] border border-[var(--color-border)] rounded-[var(--radius-sm)] hover:border-[var(--color-border-strong)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-subtle)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] transition-[border] duration-150"
                   />
                   {searchQuery && (
                     <>
                       <button
                         onClick={() => addFilterFromQuery(searchQuery)}
-                        className="absolute right-8 top-1/2 -translate-y-1/2 text-[var(--color-accent)] hover:text-[var(--color-accent)]/80 transition-colors font-medium text-xs"
+                        className="absolute right-9 top-1/2 -translate-y-1/2 text-[13px] font-[510] tracking-[-0.006em] text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] transition-colors duration-150"
                         title="Add filter (or press Enter)"
                       >
                         Add
                       </button>
                       <button
                         onClick={() => setSearchQuery("")}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] transition-colors duration-150"
                         title="Clear"
                       >
-                        <X className="w-3 h-3" />
+                        <X className="w-3.5 h-3.5" />
                       </button>
                     </>
                   )}
@@ -1226,72 +1298,73 @@ export function JsonOutputPanel({
                 {/* Add Filter Button */}
                 <button
                   onClick={() => setShowFilterBuilder(!showFilterBuilder)}
-                  className={`h-7 px-2.5 text-xs rounded font-medium flex items-center gap-1.5 transition-colors ${
+                  className={`h-8 px-3 text-[13px] font-[510] tracking-[-0.006em] rounded-[var(--radius-md)] flex items-center gap-2 transition-[background,border,color] duration-150 ${
                     showFilterBuilder || filterConditions.length > 0
-                      ? "bg-[var(--color-accent)] text-white"
-                      : "bg-[var(--color-bg)] border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)]"
+                      ? "bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)]"
+                      : "bg-[var(--color-bg)] border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)]"
                   }`}
                   title="Add filter condition"
                 >
-                  <Plus className="w-3 h-3" />
+                  <Plus className="w-3.5 h-3.5" />
                   <span>Add Filter</span>
                   {filterConditions.length > 0 && (
-                    <span className="ml-0.5 px-1.5 py-0.5 bg-white/20 rounded text-[10px] font-bold">
+                    <span className="text-[11px] opacity-80">
                       {filterConditions.length}
                     </span>
                   )}
                 </button>
 
                 {/* Numeric Range Filter */}
-                <div className="flex items-center gap-1 text-[11px] text-[var(--color-text-tertiary)]">
-                  <span>Min $:</span>
+                <div className="flex items-center gap-2 text-[13px] font-[510] tracking-[-0.006em] text-[var(--color-text-secondary)]">
+                  <label htmlFor="min-amount">Min $</label>
                   <input
+                    id="min-amount"
                     type="number"
                     value={minAmount}
                     onChange={(e) => setMinAmount(e.target.value)}
                     placeholder="0"
-                    className="w-16 py-1 px-1.5 text-xs bg-[var(--color-bg)] border border-[var(--color-border)] rounded text-[var(--color-text-primary)]"
+                    className="w-20 h-8 px-2.5 text-[13px] font-[400] tracking-[-0.006em] bg-[var(--color-bg)] border border-[var(--color-border)] rounded-[var(--radius-sm)] hover:border-[var(--color-border-strong)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-subtle)] text-[var(--color-text-primary)] transition-[border] duration-150"
                   />
                 </div>
 
-                {/* Filter Chips (Fields View Only) */}
+                {/* Quick Filter Chips (Fields View Only) */}
                 {!parsedData.isTabularSpreadsheet && tableSubView === "fields" && (
-                  <div className="flex items-center gap-1 text-xs">
+                  <div className="flex items-center gap-1">
                     <button
                       onClick={() => setFilterType("all")}
-                      className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${
+                      className={`h-7 px-2.5 rounded-[var(--radius-sm)] text-[13px] font-[510] tracking-[-0.006em] transition-[background,border,color] duration-150 ${
                         filterType === "all"
-                          ? "bg-[var(--color-accent)] text-white"
-                          : "bg-[var(--color-bg)] border border-[var(--color-border)] text-[var(--color-text-secondary)]"
+                          ? "bg-[var(--color-accent-subtle)] text-[var(--color-accent)] border border-transparent"
+                          : "bg-transparent border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)]"
                       }`}
                     >
                       All
                     </button>
                     <button
                       onClick={() => setFilterType("numeric")}
-                      className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${
+                      className={`h-7 px-2.5 rounded-[var(--radius-sm)] text-[13px] font-[510] tracking-[-0.006em] transition-[background,border,color] duration-150 ${
                         filterType === "numeric"
-                          ? "bg-[var(--color-accent)] text-white"
-                          : "bg-[var(--color-bg)] border border-[var(--color-border)] text-[var(--color-text-secondary)]"
+                          ? "bg-[var(--color-accent-subtle)] text-[var(--color-accent)] border border-transparent"
+                          : "bg-transparent border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)]"
                       }`}
                     >
-                      Amounts ($)
+                      Amounts
                     </button>
                     <button
                       onClick={() => setFilterType("high-conf")}
-                      className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${
+                      className={`h-7 px-2.5 rounded-[var(--radius-sm)] text-[13px] font-[510] tracking-[-0.006em] transition-[background,border,color] duration-150 ${
                         filterType === "high-conf"
-                          ? "bg-[var(--color-accent)] text-white"
-                          : "bg-[var(--color-bg)] border border-[var(--color-border)] text-[var(--color-text-secondary)]"
+                          ? "bg-[var(--color-accent-subtle)] text-[var(--color-accent)] border border-transparent"
+                          : "bg-transparent border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)]"
                       }`}
                     >
-                      ≥95% Conf
+                      High confidence
                     </button>
                   </div>
                 )}
               </div>
 
-              <div className="text-[11px] text-[var(--color-text-tertiary)] font-medium">
+              <div className="text-[13px] font-[510] tracking-[-0.006em] text-[var(--color-text-tertiary)]">
                 {tableSubView === "lineItems"
                   ? `${filteredLineItems.length} ${filteredLineItems.length === 1 ? "item" : "items"}`
                   : `${filteredRows.length} ${filteredRows.length === 1 ? "record" : "records"}`}
@@ -1300,16 +1373,16 @@ export function JsonOutputPanel({
 
             {/* Filter Builder Panel */}
             {showFilterBuilder && (
-              <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg p-3">
-                <div className="flex items-end gap-2">
-                  <div className="flex-1 grid grid-cols-3 gap-2">
+              <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-4">
+                <div className="flex items-end gap-3">
+                  <div className="flex-1 grid grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-[10px] font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wider mb-1">
+                      <label htmlFor="filter-field" className="block text-[13px] font-[510] tracking-[-0.006em] text-[var(--color-text-secondary)] mb-1.5">
                         Field
                       </label>
                       <select
                         id="filter-field"
-                        className="w-full px-2 py-1.5 text-xs bg-[var(--color-bg)] border border-[var(--color-border)] rounded focus:outline-none focus:border-[var(--color-accent)] text-[var(--color-text-primary)]"
+                        className="w-full h-8 px-2.5 text-[13px] font-[400] tracking-[-0.006em] bg-[var(--color-bg)] border border-[var(--color-border)] rounded-[var(--radius-sm)] hover:border-[var(--color-border-strong)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-subtle)] text-[var(--color-text-primary)] transition-[border] duration-150"
                       >
                         {tableSubView === "lineItems" ? (
                           <>
@@ -1328,12 +1401,12 @@ export function JsonOutputPanel({
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wider mb-1">
+                      <label htmlFor="filter-operator" className="block text-[13px] font-[510] tracking-[-0.006em] text-[var(--color-text-secondary)] mb-1.5">
                         Operator
                       </label>
                       <select
                         id="filter-operator"
-                        className="w-full px-2 py-1.5 text-xs bg-[var(--color-bg)] border border-[var(--color-border)] rounded focus:outline-none focus:border-[var(--color-accent)] text-[var(--color-text-primary)]"
+                        className="w-full h-8 px-2.5 text-[13px] font-[400] tracking-[-0.006em] bg-[var(--color-bg)] border border-[var(--color-border)] rounded-[var(--radius-sm)] hover:border-[var(--color-border-strong)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-subtle)] text-[var(--color-text-primary)] transition-[border] duration-150"
                       >
                         <option value="includes">includes</option>
                         <option value=">">{">"}</option>
@@ -1346,14 +1419,14 @@ export function JsonOutputPanel({
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wider mb-1">
+                      <label htmlFor="filter-value" className="block text-[13px] font-[510] tracking-[-0.006em] text-[var(--color-text-secondary)] mb-1.5">
                         Value
                       </label>
                       <input
                         type="text"
                         id="filter-value"
                         placeholder="Enter value..."
-                        className="w-full px-2 py-1.5 text-xs bg-[var(--color-bg)] border border-[var(--color-border)] rounded focus:outline-none focus:border-[var(--color-accent)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)]"
+                        className="w-full h-8 px-2.5 text-[13px] font-[400] tracking-[-0.006em] bg-[var(--color-bg)] border border-[var(--color-border)] rounded-[var(--radius-sm)] hover:border-[var(--color-border-strong)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-subtle)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] transition-[border] duration-150"
                       />
                     </div>
                   </div>
@@ -1370,9 +1443,9 @@ export function JsonOutputPanel({
                         if (valueInput) valueInput.value = "";
                       }
                     }}
-                    className="px-3 py-1.5 text-xs font-medium bg-[var(--color-accent)] text-white rounded hover:opacity-90 transition-opacity flex items-center gap-1.5"
+                    className="h-8 px-3 text-[13px] font-[510] tracking-[-0.006em] bg-[var(--color-accent)] text-white rounded-[var(--radius-md)] hover:bg-[var(--color-accent-hover)] transition-colors duration-150 flex items-center gap-2"
                   >
-                    <Plus className="w-3 h-3" />
+                    <Plus className="w-3.5 h-3.5" />
                     Add
                   </button>
                 </div>
@@ -1382,18 +1455,18 @@ export function JsonOutputPanel({
             {/* Active Filter Conditions Chips */}
             {filterConditions.length > 0 && (
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[10px] font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wider">
-                  Active Filters:
+                <span className="text-[13px] font-[510] tracking-[-0.006em] text-[var(--color-text-tertiary)]">
+                  Active filters
                 </span>
                 {filterConditions.map((condition) => (
                   <div
                     key={condition.id}
-                    className="flex items-center gap-1.5 px-2 py-1 bg-[var(--color-accent)]/10 border border-[var(--color-accent)]/30 rounded text-xs text-[var(--color-text-primary)]"
+                    className="flex items-center gap-1.5 h-7 px-2.5 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-[var(--radius-pill)] text-[13px] font-[400] tracking-[-0.006em] text-[var(--color-text-primary)] hover:border-[var(--color-border-strong)] transition-[border] duration-150"
                   >
-                    <span className="font-mono">{condition.displayText}</span>
+                    <span className="font-mono text-[12px]">{condition.displayText}</span>
                     <button
                       onClick={() => removeFilterCondition(condition.id)}
-                      className="hover:text-[var(--color-accent)] transition-colors"
+                      className="text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] transition-colors duration-150"
                       title="Remove filter"
                     >
                       <X className="w-3 h-3" />
@@ -1402,9 +1475,9 @@ export function JsonOutputPanel({
                 ))}
                 <button
                   onClick={() => setFilterConditions([])}
-                  className="px-2 py-1 text-[10px] font-medium text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] transition-colors uppercase tracking-wider"
+                  className="h-7 px-2.5 text-[13px] font-[510] tracking-[-0.006em] text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] transition-colors duration-150"
                 >
-                  Clear All
+                  Clear all
                 </button>
               </div>
             )}
