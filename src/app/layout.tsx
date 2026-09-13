@@ -14,7 +14,11 @@ export const metadata: Metadata = {
   description: "AI-powered document processing and extraction",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <ClerkProvider>
       <html

@@ -1,31 +1,33 @@
 /**
- * Pipeline barrel export — Stages 1, 2, and 3 modules.
+ * Pipeline barrel export — Deterministic Tabular & Multimodal Vision Modules.
  */
 
-// Stage 1: Deterministic Parsers & Sanitizer
-export { sanitizeText } from "./sanitizer";
+// Tabular Deterministic Parser (CSV & XLSX)
 export { parseTabular, type TabularResult } from "./tabular-parser";
-export { extractText, type TextExtractionResult } from "./text-extractor";
+export { summarizeTabularData, type TabularSummary } from "./tabular-summary";
+
+// Multimodal Vision Extractor (PDF, DOCX, TXT, Images)
+export {
+  extractDocumentVision,
+  extractFullPdfText,
+  type VisionExtractionOutput,
+  type DocumentMetadata,
+  type ExtractedLineItem,
+  type DocumentTotals,
+  type GroundedFieldItem,
+} from "./vision-extractor";
+
+// Self-Healing Math Validator
+export {
+  validateAndReconcileMath,
+  type MathValidationResult,
+  type LineItemInput,
+  type DocumentTotalsInput,
+} from "./math-validator";
 
 // Gemini Client & Utilities
 export { getGeminiClient, GEMINI_MODEL } from "./gemini-client";
-export { withRetry } from "./retry";
+export { withRetry, type RetryOptions } from "./retry";
 
-// Stage 2: Schema Induction & Tabular Summary
-export {
-  induceSchema,
-  type InducedField,
-  type InducedSchema,
-  type FieldDataType,
-} from "./schema-inducer";
-export { summarizeTabularData, type TabularSummary } from "./tabular-summary";
-
-// Stage 3: Grounded Extraction
-export {
-  extractGroundedFields,
-  type GroundedField,
-  type ExtractionResult,
-} from "./extractor";
-
-// Stage 4: Orchestrator
+// Orchestrator
 export { processDocument } from "./orchestrator";

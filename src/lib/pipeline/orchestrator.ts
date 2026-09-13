@@ -14,10 +14,8 @@
 import { prisma } from "@/lib/prisma";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { parseTabular } from "./tabular-parser";
-import { extractText } from "./text-extractor";
-import { induceSchema } from "./schema-inducer";
-import { extractGroundedFields } from "./extractor";
 import { summarizeTabularData } from "./tabular-summary";
+import { extractDocumentVision, extractFullPdfText } from "./vision-extractor";
 import type { Document, Extraction, Prisma } from "@prisma/client";
 
 const BUCKET_NAME = process.env.SUPABASE_BUCKET_NAME || "MESH";
@@ -60,6 +58,47 @@ async function fetchFileBuffer(fileUrl: string): Promise<Buffer> {
   }
 
   throw new Error(`Could not fetch file content from: ${fileUrl}`);
+}
+
+/**
+ * Phase 2: Background full-text enrichment (fire-and-forget).
+ *
+ * Parses ALL pages from the PDF locally using pdf-parse (no page limit).
+ * Stores the complete document text in `rawText` and marks `extractionDepth`
+ * as "FULL". Zero LLM tokens — pure local text extraction.
+ *
+ * This runs AFTER the synchronous Phase 1 returns to the user, so the UI
+ * gets instant results while this enriches the database in the background.
+ */
+async function enrichFullText(documentId: string, fileUrl: string): Promise<void> {
+  try {
+    const startMs = Date.now();
+    const buffer = await fetchFileBuffer(fileUrl);
+    const { text: fullText, numPages } = await extractFullPdfText(buffer);
+
+    if (!fullText || fullText.length < 100) {
+      console.log(
+        `[Orchestrator] Skipping full-text enrichment for ${documentId} — insufficient text (${fullText.length} chars)`
+      );
+      return;
+    }
+
+    await prisma.document.update({
+      where: { id: documentId },
+      data: {
+        rawText: fullText,
+        extractionDepth: "FULL",
+      },
+    });
+
+    const elapsedMs = Date.now() - startMs;
+    console.log(
+      `[Orchestrator] ✅ Full-text enrichment complete: ${documentId} — ${numPages} pages, ${fullText.length.toLocaleString()} chars in ${elapsedMs}ms`
+    );
+  } catch (err) {
+    // Non-fatal: the partial extraction from Phase 1 is still valid and usable
+    console.error(`[Orchestrator] Full-text enrichment error for ${documentId}:`, err);
+  }
 }
 
 /**
@@ -126,25 +165,21 @@ export async function processDocument(documentId: string): Promise<{
     }
 
     // =========================================================================
-    // PATH B: Text documents (PDF / DOCX / TXT) — Full 4-stage pipeline
+    // PATH B: Documents (PDF / DOCX / TXT / Images) — Multimodal Vision Single Pass
     // =========================================================================
     else {
-      const { text } = await extractText(
+      const visionResult = await extractDocumentVision(
         fileBuffer,
-        doc.fileType as "PDF" | "DOCX" | "TXT"
+        doc.mimeType,
+        doc.fileType
       );
-      rawText = text;
 
-      // Stage 2: Schema induction (first ~4000 characters)
-      const schema = await induceSchema(text);
+      category = visionResult.category;
+      summary = visionResult.summary;
+      extractedData = visionResult as unknown as Prisma.InputJsonValue;
 
-      category = schema.category;
-      summary = schema.summary;
-
-      // Stage 3: Grammar-constrained grounded extraction (full text)
-      const extraction = await extractGroundedFields(text, schema);
-
-      extractedData = extraction.fields as unknown as Prisma.InputJsonValue;
+      // Persist structured context summary for search & chat
+      rawText = `Category: ${visionResult.category}\nVendor: ${visionResult.metadata.vendor || "N/A"}\nSummary: ${visionResult.summary}\nLine Items: ${visionResult.lineItems.length}\nTotal Due: ${visionResult.totals.totalDue ?? "N/A"}`;
     }
 
     // =========================================================================
@@ -174,6 +209,18 @@ export async function processDocument(documentId: string): Promise<{
         },
       }),
     ]);
+
+    // =========================================================================
+    // Phase 2: Background full-text enrichment (fire-and-forget)
+    // For PDFs, asynchronously parse ALL pages and store the complete text.
+    // This does NOT block the API response — the user gets instant results.
+    // Zero additional LLM tokens — pure local pdf-parse extraction.
+    // =========================================================================
+    if (doc.fileType === "PDF") {
+      enrichFullText(documentId, doc.fileUrl).catch((err) => {
+        console.error(`[Orchestrator] Background full-text enrichment failed for ${documentId}:`, err);
+      });
+    }
 
     return {
       document: updatedDoc,

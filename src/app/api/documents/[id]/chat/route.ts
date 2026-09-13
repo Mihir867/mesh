@@ -167,19 +167,53 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     // Reverse to chronological order
     const chronologicalHistory = recentHistory.reverse();
 
-    // 4. Construct Minimal-Context System Instruction & Contents
-    // We only pass category, summary, and extracted JSON fields — NOT the massive raw document text!
-    // This reduces token consumption by over 95%, saving costs and minimizing latency.
+    // 4. Construct System Instruction with structured extraction + full document text
+    // The structured extraction JSON provides precise fields/totals for grounded answers.
+    // When available, rawText from Phase 2 enrichment provides the complete document text
+    // so chat can answer questions about ANY page, not just the first 6 pages.
     const extraction = document.extraction;
+
+    // Build raw text context with smart windowing for the LLM context window
+    let rawTextSection = "";
+    if (document.rawText && document.rawText.length > 0) {
+      // Gemini 2.0 Flash supports 1M tokens (~4M chars) context
+      // We'll use up to 300K chars (75K tokens) for document content
+      const MAX_CONTEXT_CHARS = 300000;
+      let rawTextContent: string;
+
+      if (document.rawText.length <= MAX_CONTEXT_CHARS) {
+        // Document fits entirely in context window
+        rawTextContent = document.rawText;
+      } else {
+        // For massive documents (1M+ chars), use strategic sampling:
+        // - First 100K chars: Headers, metadata, initial content
+        // - Middle 100K chars: Sample from document middle (around page 340/684)
+        // - Last 100K chars: Totals, signatures, final content
+        const head = document.rawText.slice(0, 100000);
+        const middleStart = Math.floor(document.rawText.length / 2) - 50000;
+        const middle = document.rawText.slice(middleStart, middleStart + 100000);
+        const tail = document.rawText.slice(-100000);
+        
+        const omittedChars = document.rawText.length - 300000;
+        rawTextContent = `${head}\n\n[... ~${omittedChars.toLocaleString()} characters omitted for context efficiency. Content includes beginning, middle sample (around page ${Math.floor(684/2)}), and end sections. ...]\n\n--- MIDDLE SECTION SAMPLE ---\n${middle}\n\n--- FINAL SECTION ---\n${tail}`;
+      }
+
+      rawTextSection = `
+<DOCUMENT_RAW_TEXT>
+${rawTextContent}
+</DOCUMENT_RAW_TEXT>`;
+    }
+
     const systemInstruction = `
 You are MESH AI, an intelligent, precise assistant specialized in answering questions about this specific document.
-You answer strictly based on the structured extraction JSON and summary provided below.
+You answer based on the structured extraction JSON, summary, and full document text provided below.
 
 RULES:
-1. Ground your answers directly in the provided extraction data, numbers, dates, and facts.
+1. Ground your answers directly in the provided data — extraction fields, raw text, numbers, dates, and facts.
 2. Be concise, direct, helpful, and polite. Avoid unnecessary conversational fluff.
-3. If the user asks about information or fields not captured in the extracted data, clearly explain that it is not present in the extracted schema.
-4. Format responses cleanly using GitHub Markdown:
+3. If the user asks about information not found in the extraction data OR the raw document text, clearly explain that it is not present.
+4. When answering, prefer specific data from the structured extraction for precision, and use the raw text for broader context or details not captured in the extraction schema.
+5. Format responses cleanly using GitHub Markdown:
    - Use compact section headers (prefer ### or ####, avoid top-level # or ##).
    - Use bullet points with bold field names (e.g., "- **Metric Name:** Value").
    - Use Markdown tables when presenting multiple financial periods, dates, or tabular comparisons.
@@ -194,6 +228,7 @@ Summary: ${extraction.summary}
 Extracted JSON Data:
 ${JSON.stringify(extraction.data, null, 2)}
 </DOCUMENT_STRUCTURED_CONTEXT>
+${rawTextSection}
 `;
 
     // Map history to Gemini content format

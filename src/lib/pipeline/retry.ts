@@ -66,13 +66,22 @@ export async function withRetry<T>(
         throw error;
       }
 
-      // Exponential backoff with full randomized jitter: delay = min(maxDelay, base * factor^(attempt-1)) + jitter
+      // Parse Google RPC suggested retry delay if present in error message
+      let suggestedDelayMs = 0;
+      const retryInMatch = msg.match(/Please retry in\s+([0-9.]+)\s*s/i);
+      if (retryInMatch) {
+        suggestedDelayMs = parseFloat(retryInMatch[1]) * 1000 + 500;
+      }
+
+      // Exponential backoff with full randomized jitter
       const exponentialWait = baseDelay * Math.pow(factor, attempt - 1);
       const jitter = Math.random() * 1000;
-      const waitTime = Math.min(exponentialWait + jitter, maxDelay);
+      const calculatedWait = Math.min(exponentialWait + jitter, maxDelay);
+      // Respect suggested delay but cap at maxDelay (default 12s) to prevent browser timeouts
+      const waitTime = Math.min(Math.max(calculatedWait, suggestedDelayMs), maxDelay);
 
       console.warn(
-        `[Pipeline Retry] Transient API notice (${status || "Network/503"}). Backing off for ${Math.round(
+        `[Pipeline Retry] Transient API notice (${status || "Network/429/503"}). Backing off for ${Math.round(
           waitTime
         )}ms before retry ${attempt}/${maxRetries}...`
       );

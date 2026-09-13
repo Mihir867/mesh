@@ -88,6 +88,10 @@ model Document {
   // Cached parsed text (used as context for Chat Sidebar & re-extraction)
   rawText      String?        @map("raw_text") @db.Text
 
+  // Tracks whether full document text has been indexed:
+  //   "PARTIAL" = first-pass (6 pages only), "FULL" = complete document text stored
+  extractionDepth String      @default("PARTIAL") @map("extraction_depth")
+
   createdAt    DateTime       @default(now()) @map("created_at")
   updatedAt    DateTime       @updatedAt @map("updated_at")
 
