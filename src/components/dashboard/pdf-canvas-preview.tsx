@@ -1,12 +1,21 @@
 "use client";
 
-import React, { useEffect, useRef, useState, memo } from "react";
-import type { PDFDocumentProxy, RenderTask } from "pdfjs-dist";
+import React, { useEffect, useRef, useState, memo, useCallback } from "react";
+import type { PDFDocumentProxy, RenderTask, PDFPageProxy } from "pdfjs-dist";
 import { ZoomIn, ZoomOut, ExternalLink } from "lucide-react";
+import { usePdfHighlight } from "@/contexts/pdf-highlight-context";
 
 interface PdfCanvasPreviewProps {
   fileUrl: string;
   fileName?: string;
+}
+
+interface HighlightBox {
+  pageNumber: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 interface PdfPageItemProps {
@@ -14,6 +23,8 @@ interface PdfPageItemProps {
   pageNumber: number;
   zoomScale: number;
   containerWidth: number;
+  highlightBoxes: HighlightBox[];
+  onPageRendered?: (pageNumber: number, pageElement: HTMLDivElement) => void;
 }
 
 const PdfPageItem = memo(function PdfPageItem({
@@ -21,11 +32,23 @@ const PdfPageItem = memo(function PdfPageItem({
   pageNumber,
   zoomScale,
   containerWidth,
+  highlightBoxes,
+  onPageRendered,
 }: PdfPageItemProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const highlightCanvasRef = useRef<HTMLCanvasElement>(null);
+  const pageContainerRef = useRef<HTMLDivElement>(null);
   const renderTaskRef = useRef<RenderTask | null>(null);
   const [isRendered, setIsRendered] = useState(false);
   const [pageDimensions, setPageDimensions] = useState<{ width: number; height: number } | null>(null);
+  const [effectiveScale, setEffectiveScale] = useState<number>(1);
+
+  // Notify parent when page is rendered
+  useEffect(() => {
+    if (isRendered && pageContainerRef.current && onPageRendered) {
+      onPageRendered(pageNumber, pageContainerRef.current);
+    }
+  }, [isRendered, pageNumber, onPageRendered]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -66,6 +89,7 @@ const PdfPageItem = memo(function PdfPageItem({
         canvas.style.height = `${displayHeight}px`;
 
         setPageDimensions({ width: displayWidth, height: displayHeight });
+        setEffectiveScale(effectiveScale);
 
         const renderContext = {
           canvas: canvas,
@@ -102,8 +126,49 @@ const PdfPageItem = memo(function PdfPageItem({
     };
   }, [doc, pageNumber, zoomScale, containerWidth]);
 
+  // Draw highlight boxes on overlay canvas
+  useEffect(() => {
+    const highlightCanvas = highlightCanvasRef.current;
+    if (!highlightCanvas || !pageDimensions || !isRendered) return;
+
+    const ctx = highlightCanvas.getContext("2d");
+    if (!ctx) return;
+
+    // Match dimensions with main canvas
+    highlightCanvas.width = pageDimensions.width;
+    highlightCanvas.height = pageDimensions.height;
+    highlightCanvas.style.width = `${pageDimensions.width}px`;
+    highlightCanvas.style.height = `${pageDimensions.height}px`;
+
+    // Clear previous highlights
+    ctx.clearRect(0, 0, highlightCanvas.width, highlightCanvas.height);
+
+    // Draw highlight boxes for this page
+    const pageBoxes = highlightBoxes.filter((box) => box.pageNumber === pageNumber);
+    
+    if (pageBoxes.length > 0) {
+      pageBoxes.forEach((box) => {
+        // Apply effective scale to coordinates
+        const scaledX = box.x * effectiveScale;
+        const scaledY = box.y * effectiveScale;
+        const scaledWidth = box.width * effectiveScale;
+        const scaledHeight = box.height * effectiveScale;
+
+        // Draw semi-transparent yellow highlight box
+        ctx.fillStyle = "rgba(255, 235, 59, 0.35)";
+        ctx.fillRect(scaledX, scaledY, scaledWidth, scaledHeight);
+
+        // Draw border for emphasis
+        ctx.strokeStyle = "rgba(255, 193, 7, 0.8)";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(scaledX, scaledY, scaledWidth, scaledHeight);
+      });
+    }
+  }, [highlightBoxes, pageNumber, pageDimensions, isRendered, effectiveScale]);
+
   return (
     <div
+      ref={pageContainerRef}
       className="relative bg-white rounded-[3px] shadow-[0_4px_24px_rgba(0,0,0,0.08)] border border-zinc-200/90 overflow-hidden shrink-0 transition-shadow hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)]"
       style={{
         width: pageDimensions ? `${pageDimensions.width}px` : "auto",
@@ -126,6 +191,11 @@ const PdfPageItem = memo(function PdfPageItem({
         </div>
       )}
       <canvas ref={canvasRef} className="block mx-auto" />
+      <canvas 
+        ref={highlightCanvasRef} 
+        className="absolute top-0 left-0 pointer-events-none"
+        style={{ mixBlendMode: "multiply" }}
+      />
       <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-sm text-[10px] text-white/90 select-none">
         {pageNumber}
       </div>
@@ -135,12 +205,118 @@ const PdfPageItem = memo(function PdfPageItem({
 
 export function PdfCanvasPreview({ fileUrl, fileName = "Document.pdf" }: PdfCanvasPreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const pageRefsMap = useRef<Map<number, HTMLDivElement>>(new Map());
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
   const [numPages, setNumPages] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [zoomScale, setZoomScale] = useState<number>(1.0);
   const [containerWidth, setContainerWidth] = useState<number>(500);
+  const [highlightBoxes, setHighlightBoxes] = useState<HighlightBox[]>([]);
+
+  const { currentHighlight } = usePdfHighlight();
+
+  // Store page element references
+  const handlePageRendered = useCallback((pageNumber: number, element: HTMLDivElement) => {
+    pageRefsMap.current.set(pageNumber, element);
+  }, []);
+
+  // Search for text across all pages and create highlight boxes
+  const findAndHighlightText = useCallback(async (searchText: string) => {
+    if (!pdfDoc || !searchText || searchText.trim().length < 3) {
+      setHighlightBoxes([]);
+      return;
+    }
+
+    try {
+      const normalizedSearch = searchText.trim().toLowerCase();
+      const boxes: HighlightBox[] = [];
+
+      // Search through all pages
+      for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+        const page: PDFPageProxy = await pdfDoc.getPage(pageNum);
+        const textContent = await page.getTextContent();
+        const viewport = page.getViewport({ scale: 1.0 });
+
+        // Build full page text with item tracking
+        let fullText = "";
+        const itemPositions: Array<{ start: number; end: number; item: any }> = [];
+
+        textContent.items.forEach((item: any) => {
+          if (item.str) {
+            const start = fullText.length;
+            fullText += item.str + " ";
+            const end = fullText.length;
+            itemPositions.push({ start, end, item });
+          }
+        });
+
+        // Find all occurrences of search text
+        const lowerFullText = fullText.toLowerCase();
+        let searchIndex = lowerFullText.indexOf(normalizedSearch);
+
+        while (searchIndex !== -1) {
+          // Find which text items contain this match
+          const matchEnd = searchIndex + normalizedSearch.length;
+
+          itemPositions.forEach(({ start, end, item }) => {
+            // Check if this item overlaps with the match
+            if (start <= matchEnd && end >= searchIndex) {
+              // Convert PDF coordinates to canvas coordinates
+              const transform = item.transform;
+              const x = transform[4];
+              const y = viewport.height - transform[5];
+              const width = item.width;
+              const height = item.height || 12; // fallback height
+
+              boxes.push({
+                pageNumber: pageNum,
+                x,
+                y: y - height,
+                width,
+                height,
+              });
+            }
+          });
+
+          searchIndex = lowerFullText.indexOf(normalizedSearch, searchIndex + 1);
+        }
+      }
+
+      if (boxes.length > 0) {
+        setHighlightBoxes(boxes);
+        
+        // Scroll to first match
+        const firstBox = boxes[0];
+        const pageElement = pageRefsMap.current.get(firstBox.pageNumber);
+        
+        if (pageElement && containerRef.current) {
+          // Smooth scroll to the page containing the match
+          setTimeout(() => {
+            pageElement.scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+            });
+          }, 100);
+        }
+      } else {
+        setHighlightBoxes([]);
+        console.log(`[PDF Highlight] No matches found for: "${searchText}"`);
+      }
+    } catch (error) {
+      console.error("[PDF Highlight] Search error:", error);
+      setHighlightBoxes([]);
+    }
+  }, [pdfDoc]);
+
+  // React to highlight requests from context
+  useEffect(() => {
+    if (currentHighlight) {
+      findAndHighlightText(currentHighlight.text);
+    } else {
+      setHighlightBoxes([]);
+    }
+  }, [currentHighlight, findAndHighlightText]);
 
   // Measure container width for responsive scaling
   useEffect(() => {
@@ -297,6 +473,8 @@ export function PdfCanvasPreview({ fileUrl, fileName = "Document.pdf" }: PdfCanv
               pageNumber={index + 1}
               zoomScale={zoomScale}
               containerWidth={containerWidth}
+              highlightBoxes={highlightBoxes}
+              onPageRendered={handlePageRendered}
             />
           ))
         )}

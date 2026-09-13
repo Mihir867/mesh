@@ -30,6 +30,7 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
+import { usePdfHighlight } from "@/contexts/pdf-highlight-context";
 
 export interface JsonOutputPanelProps {
   jsonData?: any | null;
@@ -185,6 +186,16 @@ export function JsonOutputPanel({
   onRetry,
   onOpenChat,
 }: JsonOutputPanelProps) {
+  // PDF Highlight Context
+  const { highlightText } = usePdfHighlight();
+
+  // Handler for clicking cells to highlight source in PDF
+  const handleCellClick = (sourceSnippet: string | undefined) => {
+    if (sourceSnippet && sourceSnippet.trim().length > 0) {
+      highlightText(sourceSnippet);
+    }
+  };
+
   // View Switcher: "table" (default) or "json"
   const [viewMode, setViewMode] = useState<"table" | "json">("table");
   const [tableSubView, setTableSubView] = useState<"fields" | "lineItems">("fields");
@@ -1659,7 +1670,13 @@ export function JsonOutputPanel({
                           <React.Fragment key={row.id}>
                             <tr className="hover:bg-[var(--color-surface)] transition-colors group">
                               {/* Field */}
-                              <td className="py-2.5 px-3 font-medium text-[var(--color-text-primary)]">
+                              <td 
+                                className={`py-2.5 px-3 font-medium text-[var(--color-text-primary)] ${
+                                  row.sourceSnippet ? 'cursor-pointer hover:bg-[var(--color-accent-subtle)] transition-colors' : ''
+                                }`}
+                                onClick={() => handleCellClick(row.sourceSnippet)}
+                                title={row.sourceSnippet ? 'Click to highlight source in PDF' : undefined}
+                              >
                                 <div>{row.field}</div>
                                 <div className="text-[10px] text-[var(--color-text-tertiary)] font-mono">
                                   {row.key}
@@ -1667,7 +1684,13 @@ export function JsonOutputPanel({
                               </td>
 
                               {/* Value */}
-                              <td className="py-2.5 px-3">
+                              <td 
+                                className={`py-2.5 px-3 ${
+                                  row.sourceSnippet ? 'cursor-pointer hover:bg-[var(--color-accent-subtle)] transition-colors' : ''
+                                }`}
+                                onClick={() => handleCellClick(row.sourceSnippet)}
+                                title={row.sourceSnippet ? 'Click to highlight source in PDF' : undefined}
+                              >
                                 {row.numericValue !== null ? (
                                   <span className="font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded text-xs border border-emerald-200">
                                     {row.displayValue}

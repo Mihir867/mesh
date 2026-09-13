@@ -7,6 +7,7 @@ import {
 } from "./document-upload-panel";
 import { JsonOutputPanel } from "./json-output-panel";
 import { ChatSidebar } from "./chat-sidebar";
+import { PdfHighlightProvider } from "@/contexts/pdf-highlight-context";
 
 export function SplitDashboard() {
   const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
@@ -158,52 +159,54 @@ export function SplitDashboard() {
   }, [uploadedFile, runPipeline]);
 
   return (
-    <div className="w-full max-w-[1600px] mx-auto">
-      {/* Premium Container - Hairline border, tight shadow for elevation */}
-      <div style={{
-        border: '1px solid var(--color-border)',
-        borderRadius: 'var(--radius-lg)',
-        background: 'var(--color-bg)',
-        boxShadow: 'var(--shadow-md)',
-        overflow: 'hidden',
-        height: '740px',
-        maxHeight: 'calc(100vh - 180px)',
-        minHeight: '620px',
-        display: 'flex',
-        flexDirection: 'column'
-      }}>
-        <div className="grid grid-cols-1 lg:grid-cols-12 flex-1 min-h-0 h-full">
-          <DocumentUploadPanel
-            onUploadStart={handleUploadStart}
-            onUploadSuccess={handleUploadSuccess}
-            onClear={handleClear}
-            restoredFile={uploadedFile}
-          />
-          <JsonOutputPanel
-            jsonData={extractedData}
-            category={category}
-            summary={summary}
-            isProcessing={isProcessing}
-            isStreaming={isStreaming}
-            processingTimeMs={processingTimeMs}
-            confidenceScore={confidenceScore}
-            errorMessage={errorMessage}
-            onRetry={handleRetry}
-            onOpenChat={() => setIsChatOpen(true)}
-          />
+    <PdfHighlightProvider>
+      <div className="w-full max-w-[1600px] mx-auto">
+        {/* Premium Container - Hairline border, tight shadow for elevation */}
+        <div style={{
+          border: '1px solid var(--color-border)',
+          borderRadius: 'var(--radius-lg)',
+          background: 'var(--color-bg)',
+          boxShadow: 'var(--shadow-md)',
+          overflow: 'hidden',
+          height: '740px',
+          maxHeight: 'calc(100vh - 180px)',
+          minHeight: '620px',
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          <div className="grid grid-cols-1 lg:grid-cols-12 flex-1 min-h-0 h-full">
+            <DocumentUploadPanel
+              onUploadStart={handleUploadStart}
+              onUploadSuccess={handleUploadSuccess}
+              onClear={handleClear}
+              restoredFile={uploadedFile}
+            />
+            <JsonOutputPanel
+              jsonData={extractedData}
+              category={category}
+              summary={summary}
+              isProcessing={isProcessing}
+              isStreaming={isStreaming}
+              processingTimeMs={processingTimeMs}
+              confidenceScore={confidenceScore}
+              errorMessage={errorMessage}
+              onRetry={handleRetry}
+              onOpenChat={() => setIsChatOpen(true)}
+            />
+          </div>
         </div>
-      </div>
 
-      {/* Interactive Chat Sidebar */}
-      <ChatSidebar
-        open={isChatOpen}
-        onOpenChange={setIsChatOpen}
-        documentId={uploadedFile?.id || null}
-        documentName={uploadedFile?.name || "Document"}
-        category={category}
-        summary={summary}
-      />
-    </div>
+        {/* Interactive Chat Sidebar */}
+        <ChatSidebar
+          open={isChatOpen}
+          onOpenChange={setIsChatOpen}
+          documentId={uploadedFile?.id || null}
+          documentName={uploadedFile?.name || "Document"}
+          category={category}
+          summary={summary}
+        />
+      </div>
+    </PdfHighlightProvider>
   );
 }
 
